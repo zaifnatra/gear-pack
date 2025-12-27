@@ -1,0 +1,236 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// ==========================================
+// 1. USER & IDENTITY
+// ==========================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  fullName  String?
+  avatarUrl String?
+  bio       String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  gearCloset     GearItem[]
+  organizedTrips Trip[]        @relation("TripOrganizer")
+  participating  Participant[]
+  
+  // Friendships
+  sentRequests     Friendship[] @relation("Sender")
+  receivedRequests Friendship[] @relation("Receiver")
+  
+  // Gear I am physically carrying on trips
+  carryingTripGear TripGear[]   @relation("GearCarrier")
+}
+
+// ==========================================
+// 2. SOCIAL GRAPH
+// ==========================================
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+model Friendship {
+  id        String           @id @default(uuid())
+  status    FriendshipStatus @default(PENDING)
+  
+  userId    String
+  friendId  String
+  
+  user      User     @relation("Sender", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("Receiver", fields: [friendId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+// ==========================================
+// 3. GEAR CLOSET
+// ==========================================
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String
+  parentId  String?
+  parent    Category?  @relation("CatHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CatHierarchy")
+  gearItems GearItem[]
+}
+
+enum Condition {
+  NEW
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  RETIRED
+}
+
+model GearItem {
+  id          String    @id @default(uuid())
+  name        String
+  brand       String?
+  model       String?
+  
+  // Specs
+  weightGrams Int?
+  tempRating  Int?
+  size        String?
+  imageUrl    String?   // URL to image (Cloudinary/S3)
+  
+  // State
+  condition   Condition @default(GOOD)
+  isLendable  Boolean   @default(false)
+  notes       String?
+  
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
+  
+  tripAppearances TripGear[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+}
+
+// ==========================================
+// 4. TRIPS & LOGISTICS
+// ==========================================
+
+enum TripVisibility {
+  PRIVATE
+  FRIENDS_ONLY
+  PUBLIC
+}
+
+enum TripType {
+  DAY_HIKE
+  OVERNIGHT
+  MULTI_DAY
+  THRU_HIKE
+  OTHER
+}
+
+enum Difficulty {
+  EASY
+  MODERATE
+  HARD
+  EXTREME
+}
+
+model Trip {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String?  @unique
+  location    String?
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  
+  // Stats
+  type          TripType   @default(OVERNIGHT)
+  difficulty    Difficulty @default(MODERATE)
+  distance      Float?     // User preference unit
+  elevationGain Int?       // User preference unit
+  externalUrl   String?    // Link to AllTrails, etc.
+
+  visibility  TripVisibility @default(FRIENDS_ONLY)
+  
+  organizerId String
+  organizer   User     @relation("TripOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  
+  participants Participant[]
+  gearList     TripGear[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([startDate])
+}
+
+enum ParticipantRole {
+  ORGANIZER
+  LEADER
+  MEMBER
+  GUEST
+}
+
+enum ParticipantStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+}
+
+model Participant {
+  id        String            @id @default(uuid())
+  role      ParticipantRole   @default(MEMBER)
+  status    ParticipantStatus @default(ACCEPTED) 
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, tripId])
+  @@index([tripId])
+}
+
+model TripGear {
+  id        String   @id @default(uuid())
+  
+  isPacked  Boolean  @default(false)
+  quantity  Int      @default(1)
+  
+  // Shared Gear Logic
+  isShared  Boolean  @default(false) // e.g. "This is the group tent"
+  
+  // Assignment
+  carriedById String?
+  carrier     User?    @relation("GearCarrier", fields: [carriedById], references: [id])
+  
+  // Relations
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  gearId    String
+  gear      GearItem @relation(fields: [gearId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([carriedById])
+}
