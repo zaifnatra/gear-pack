@@ -3,7 +3,7 @@
 GearPack is a web application for hikers and backpackers to manage their gear closets, plan trips, and share lists with friends.
 
 ## Live Demo
-**[View Live Demo on Vercel](gear-pack.vercel.app)**
+gear-pack.vercel.app
 
 ## December 27, 2025. Completed Features
 - **User Authentication**: Secure Sign Up & Login (Email/Username). 
