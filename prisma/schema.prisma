@@ -41,6 +41,60 @@ model User {
   
   // Gear I am physically carrying on trips
   carryingTripGear TripGear[]   @relation("GearCarrier")
+  
+  // Messages
+  sentMessages     Message[]    @relation("Sender")
+  
+  // Conversations
+  conversations    ConversationParticipant[]
+
+  // Notifications
+  notifications    Notification[]
+}
+
+model Conversation {
+  id            String   @id @default(uuid())
+  name          String?  // Null for DMs, required for Groups usually
+  isGroup       Boolean  @default(false)
+  
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  
+  messages      Message[]
+  participants  ConversationParticipant[]
+}
+
+model ConversationParticipant {
+  id             String   @id @default(uuid())
+  joinedAt       DateTime @default(now())
+  lastReadAt     DateTime @default(now())
+  
+  userId         String
+  conversationId String
+  
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  content        String
+  isRead         Boolean  @default(false) // Deprecated in favor of participant read status, but kept for simple status
+  
+  senderId       String
+  sender         User     @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime @default(now())
+  
+  @@index([senderId])
+  @@index([conversationId])
 }
 
 // ==========================================
@@ -233,4 +287,29 @@ model TripGear {
 
   @@index([tripId])
   @@index([carriedById])
+}
+
+// ==========================================
+// 5. SYSTEM NOTIFICATIONS
+// ==========================================
+
+enum NotificationType {
+  FRIEND_REQUEST
+  TRIP_INVITE
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  link      String?          // URL to redirect to (e.g. /dashboard/social)
+  
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
 }

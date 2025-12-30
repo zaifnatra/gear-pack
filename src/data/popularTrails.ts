@@ -55,7 +55,115 @@ export const POPULAR_TRAILS: TrailTemplate[] = [
         elevationGain: 800,
         difficulty: "HARD",
         type: "DAY_HIKE",
-        description: "Iconic trail in Hautes-Gorges-de-la-Rivière-Malbaie National Park."
+        description: "Iconic trail in Hautes-Gorges-de-la-Rivière-Malbaie National Park with stunning valley views."
+    },
+    {
+        name: "Les Loups",
+        location: "Jacques-Cartier NP, QC",
+        distance: 11.0,
+        elevationGain: 447,
+        difficulty: "HARD",
+        type: "DAY_HIKE",
+        description: "Breathtaking views of the Jacques-Cartier and Sautauriski valleys."
+    },
+    {
+        name: "Le Montérégien",
+        location: "Mont-Saint-Bruno NP, QC",
+        distance: 8.8,
+        elevationGain: 120,
+        difficulty: "EASY",
+        type: "DAY_HIKE",
+        description: "A pleasant loop through the lakes chain, perfect for families."
+    },
+    {
+        name: "Dieppe Trail",
+        location: "Mont-Saint-Hilaire, QC",
+        distance: 3.8,
+        elevationGain: 415,
+        difficulty: "MODERATE",
+        type: "DAY_HIKE",
+        description: "Popular rocky climb to a rocky summit with great views of the region."
+    },
+    {
+        name: "Le Sommet (Summit Circle)",
+        location: "Mont-Royal, Montreal, QC",
+        distance: 8.5,
+        elevationGain: 207,
+        difficulty: "EASY",
+        type: "DAY_HIKE",
+        description: "The classic loop in the heart of Montreal. City views and forest paths."
+    },
+    {
+        name: "Calvaire d'Oka",
+        location: "Oka NP, QC",
+        distance: 4.4,
+        elevationGain: 125,
+        difficulty: "EASY",
+        type: "DAY_HIKE",
+        description: "Historic trail leading to three chapels and a viewpoint over Lac des Deux Montagnes."
+    },
+    {
+        name: "Sentier des Crêtes",
+        location: "Mont-Orford NP, QC",
+        distance: 18.7,
+        elevationGain: 990,
+        difficulty: "HARD",
+        type: "DAY_HIKE",
+        description: "Challenging rocky ridge walk with spectacular panoramas."
+    },
+    {
+        name: "Mont Chauve",
+        location: "Mont-Orford NP, QC",
+        distance: 10.6,
+        elevationGain: 310,
+        difficulty: "MODERATE",
+        type: "DAY_HIKE",
+        description: "A local favorite offering a 360-degree view without the crowds of the main ski peaks."
+    },
+    {
+        name: "Le Scotora",
+        location: "Jacques-Cartier NP, QC",
+        distance: 16.0,
+        elevationGain: 405,
+        difficulty: "HARD",
+        type: "DAY_HIKE",
+        description: "Backcountry feel, leading to the summit of Mont Andante."
+    },
+    {
+        name: "Mestachibo",
+        location: "Saint-Ferréol-les-Neiges, QC",
+        distance: 13.5,
+        elevationGain: 450,
+        difficulty: "HARD",
+        type: "DAY_HIKE",
+        description: "Technical trail linking Jean-Larose Falls to Saint-Ferréol church, crossing two canyons."
+    },
+    {
+        name: "Sentier du Fjord",
+        location: "Saguenay Fjord NP, QC",
+        distance: 18.0,
+        elevationGain: 600,
+        difficulty: "MODERATE",
+        type: "DAY_HIKE", // Or overnight
+        description: "Spectacular trail hugging the cliffs of the Saguenay Fjord."
+    },
+    {
+        name: "Mont du Lac des Cygnes",
+        location: "Grands-Jardins NP, QC",
+        distance: 8.6,
+        elevationGain: 480,
+        difficulty: "MODERATE",
+        type: "DAY_HIKE",
+        description: "Very popular trail culminating in a rocky summit with alpine vegetation."
+    },
+    {
+        name: "Le Massif du Sud",
+        location: "Saint-Philémon, QC",
+        distance: 10.0,
+        elevationGain: 915, // Peak elevation, not gain, need to check, usually ~400 gain
+        difficulty: "MODERATE",
+        type: "DAY_HIKE",
+        description: "Old growth forest and deep snow in winter."
     },
 
     // West Coast Classics

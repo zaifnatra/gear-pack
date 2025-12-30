@@ -50,7 +50,7 @@ export function GearClosetView({ initialItems, userId }: GearClosetViewProps) {
                 </button>
             </div>
 
-            <GearGrid items={initialItems} onEdit={handleEdit} />
+            <GearGrid items={initialItems} onEdit={handleEdit} showWeight={false} />
 
             <Modal
                 isOpen={isAddModalOpen}

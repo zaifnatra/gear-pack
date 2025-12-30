@@ -1,44 +1,66 @@
+
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 dark:bg-neutral-950">
-      <main className="flex flex-col items-center gap-8 px-4 text-center">
-        {/* Logo / Brand */}
-        <div className="flex items-center gap-3">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
-            <path d="m19 11-8-8-8 8" /><path d="M20 12h-4l-3 9L9 12H4l8-8Z" />
-          </svg>
-          <h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-5xl">
-            GearPack
+    <div className="relative min-h-screen w-full overflow-hidden bg-white text-neutral-900 selection:bg-emerald-100 selection:text-emerald-900">
+
+      {/* Background Auroras (Light Mode) */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-emerald-100/60 blur-[120px] animate-pulse-slow" />
+        <div className="absolute top-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-teal-100/60 blur-[120px] animate-pulse-slow delay-1000" />
+        <div className="absolute -bottom-[20%] left-[20%] w-[80%] h-[80%] rounded-full bg-emerald-50/60 blur-[120px] animate-pulse-slow delay-2000" />
+      </div>
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+
+        {/* Navigation / Header */}
+        <nav className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
+          <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
+            <img src="/logo-light.svg" alt="Gear-Pack" className="h-10 w-auto" />
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">Log In</Link>
+            <Link href="/login" className="px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium transition-all shadow-lg shadow-neutral-200">Get Started</Link>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <main className="flex flex-col items-center max-w-5xl mx-auto text-center mt-12 sm:mt-24">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-xs font-medium text-emerald-700 mb-8 animate-float shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            v2.0 Now Available
+          </div>
+
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight mb-6 text-neutral-900 drop-shadow-sm">
+            Packing Made<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Effortless.</span>
           </h1>
-        </div>
 
-        {/* Tagline */}
-        <p className="max-w-md text-lg text-neutral-600 dark:text-neutral-400 sm:text-xl">
-          The ultimate companion for hikers and backpackers. Manage your gear, plan your trips, and hit the trail with confidence.
-        </p>
+          <p className="max-w-xl text-lg sm:text-xl text-neutral-500 mb-10 leading-relaxed font-medium">
+            Manage your gear closet, plan trips, and share lists with friends. The convenient way to organize your outdoor life.
+          </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <Link
-            href="/login"
-            className="inline-flex h-12 items-center justify-center rounded-full bg-emerald-600 px-8 text-sm font-medium text-white shadow transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-700"
-          >
-            Get Started
-          </Link>
-          <Link
-            href="/dashboard"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-200 bg-white px-8 text-sm font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
-          >
-            Go to Dashboard
-          </Link>
-        </div>
-      </main>
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <Link href="/dashboard" className="px-8 py-4 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-lg hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/20 transition-all duration-300">
+              Launch App
+            </Link>
+          </div>
+        </main>
 
-      <footer className="absolute bottom-8 text-sm text-neutral-500 dark:text-neutral-400">
-        &copy; {new Date().getFullYear()} GearPack. Built for the outdoors.
-      </footer>
+        <footer className="mt-32 mb-12 text-center text-neutral-400 text-sm">
+          <p>&copy; {new Date().getFullYear()} Gear-Pack.</p>
+        </footer>
+
+      </div>
     </div>
   );
 }
+

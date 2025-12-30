@@ -22,6 +22,7 @@ interface ProfileFormProps {
         fullName: string | null
         bio: string | null
         avatarUrl: string | null
+        username: string
     }
 }
 
@@ -133,6 +134,18 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                     </label>
                     <p className="text-xs text-neutral-500">JPG, GIF or PNG. Max 2MB.</p>
                 </div>
+            </div>
+
+            <div className="space-y-2">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Username
+                </label>
+                <input
+                    value={initialData.username}
+                    readOnly
+                    className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 cursor-not-allowed focus:outline-none dark:border-gray-800 dark:bg-gray-900/50 dark:text-gray-400"
+                />
+                <p className="text-[10px] text-neutral-500">Usernames cannot be changed.</p>
             </div>
 
             <div className="space-y-2">

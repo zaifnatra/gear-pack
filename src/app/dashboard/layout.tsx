@@ -8,24 +8,34 @@ export default function DashboardLayout({
     children: React.ReactNode
 }>) {
     return (
-        <div className="flex min-h-screen flex-col bg-white dark:bg-neutral-950 md:flex-row">
-            {/* Desktop Sidebar */}
-            <Sidebar />
+        <div className="relative flex min-h-screen flex-col bg-neutral-50/50 dark:bg-neutral-950 md:flex-row overflow-hidden font-sans">
+            {/* Background Auroras (Fixed) */}
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-100/50 blur-[100px] animate-pulse-slow" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-teal-100/40 blur-[100px] animate-pulse-slow delay-1000" />
+            </div>
 
-            <div className="flex flex-1 flex-col">
+            {/* Desktop Sidebar (Z-20 to sit above background) */}
+            <div className="z-20 hidden md:block">
+                <Sidebar />
+            </div>
+
+            <div className="relative z-10 flex flex-1 flex-col h-screen overflow-hidden">
                 {/* Top Header */}
                 <AppHeader />
 
                 {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 md:pb-6">
-                    <div className="mx-auto max-w-6xl">
+                <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 md:pb-6 scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800">
+                    <div className="mx-auto max-w-7xl">
                         {children}
                     </div>
                 </main>
             </div>
 
             {/* Mobile Bottom Navigation */}
-            <BottomNav />
+            <div className="z-20 md:hidden">
+                <BottomNav />
+            </div>
         </div>
     )
 }

@@ -20,19 +20,19 @@ async function main() {
     },
     {
       name: 'Pack & Bags',
-      children: ['Backpack', 'Daypack', 'Dry Bag', 'Stuff Sack', 'Fanny Pack']
+      children: ['Backpack', 'Daypack']
     },
     {
       name: 'Kitchen',
-      children: ['Stove', 'Fuel', 'Pot/Pan', 'Utensil', 'Mug/Cup', 'Water Filter', 'Water Bottle']
+      children: ['Stove', 'Fuel', 'Pot/Pan', 'Utensils', 'Mug/Cup', 'Water Filter', 'Water Bottle']
     },
     {
       name: 'Clothing (Worn)',
-      children: ['Base Layer', 'Hiking Pants', 'Shorts', 'T-Shirt', 'Sun Hoody', 'Hat', 'Sunglasses']
+      children: ['Base Layer', 'Hiking Pants', 'Shorts', 'T-Shirt', 'Hat', 'Sunglasses']
     },
     {
       name: 'Clothing (Packed)',
-      children: ['Rain Jacket', 'Puffy/Insulation', 'Fleece', 'Wind Shirt', 'Gloves', 'Beanie', 'Camp Shoes']
+      children: ['Rain Jacket', 'Puffy/Insulation', 'Fleece', 'Gloves', 'Beanie', 'Camp Shoes']
     },
     {
       name: 'Electronics',
@@ -44,7 +44,7 @@ async function main() {
     },
     {
       name: 'Tools & Misc',
-      children: ['Trekking Poles', 'Knife/Multi-tool', 'Repair Kit', 'Lighter', 'Bear Canister']
+      children: ['Trekking Poles', 'Multi-tool', 'Lighter', 'Bear Canister', 'Other']
     }
   ]
 

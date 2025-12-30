@@ -189,3 +189,36 @@ export async function signOut() {
     await supabase.auth.signOut()
     redirect('/login')
 }
+
+export async function resetPassword(formData: FormData) {
+    const email = formData.get('email') as string
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    try {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    } catch { }
+                },
+            },
+        }
+    )
+
+    const origin = (await headers()).get('origin')
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/auth/callback?next=/dashboard/profile`, // Redirect to profile to set new password
+    })
+
+    if (error) {
+        return { success: false, error: error.message }
+    }
+
+    return { success: true }
+}

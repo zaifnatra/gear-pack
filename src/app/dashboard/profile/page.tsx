@@ -32,7 +32,8 @@ export default async function ProfilePage() {
                     initialData={{
                         fullName: dbUser.fullName,
                         bio: dbUser.bio,
-                        avatarUrl: dbUser.avatarUrl
+                        avatarUrl: dbUser.avatarUrl,
+                        username: dbUser.username
                     }}
                 />
             </div>

@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export function BottomNav() {
     const navItems = [
@@ -8,21 +11,34 @@ export function BottomNav() {
         { label: 'Gear', href: '/dashboard/gear', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="7.5 4.21 12 6.81 16.5 4.21" /><polyline points="7.5 19.79 7.5 14.6 3 12" /><polyline points="21 12 16.5 14.6 16.5 19.79" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
     ]
 
+    // Helper to determine if a link is active
+    const pathname = usePathname()
+    const isActive = (href: string) => {
+        if (href === '/dashboard' && pathname !== '/dashboard') return false
+        return pathname?.startsWith(href)
+    }
+
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white pt-1 pb-safe md:hidden dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
             <div className="flex h-16 items-center justify-around">
-                {navItems.map((item) => (
-                    <Link
-                        key={item.label}
-                        href={item.href}
-                        className="flex flex-col items-center justify-center gap-1 w-full h-full text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                            {item.icon}
-                        </svg>
-                        <span className="text-[10px] font-medium">{item.label}</span>
-                    </Link>
-                ))}
+                {navItems.map((item) => {
+                    const active = isActive(item.href)
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-colors ${active
+                                ? 'text-neutral-900 dark:text-white'
+                                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-50'
+                                }`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-6 w-6 ${active ? 'fill-neutral-100 dark:fill-neutral-800' : ''}`}>
+                                {item.icon}
+                            </svg>
+                            <span className="text-[10px] font-medium">{item.label}</span>
+                        </Link>
+                    )
+                })}
             </div>
         </nav>
     )

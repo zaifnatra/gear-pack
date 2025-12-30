@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from 'react'
 import { createGearItem, updateGearItem, deleteGearItem } from '@/app/actions/gear'
 import { getCategories } from '@/app/actions/categories'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { OUTDOOR_BRANDS } from '@/lib/constants/brands'
 
 interface GearFormProps {
     userId: string
@@ -103,9 +104,15 @@ export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
                     <input
                         value={brand}
                         onChange={(e) => setBrand(e.target.value)}
+                        list="brand-suggestions"
                         className="flex h-10 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-900"
                         placeholder="e.g. Zpacks"
                     />
+                    <datalist id="brand-suggestions">
+                        {OUTDOOR_BRANDS.map((brand) => (
+                            <option key={brand} value={brand} />
+                        ))}
+                    </datalist>
                 </div>
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Weight (g)</label>
