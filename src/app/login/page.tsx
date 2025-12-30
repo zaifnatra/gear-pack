@@ -165,7 +165,7 @@ export default function LoginPage() {
                                 )}
 
                                 {statusMessage && (
-                                    <div className={`rounded-lg p-3 text-sm ${statusMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                                    <div className="rounded-lg p-3 text-sm bg-red-50 text-red-700 border border-red-100">
                                         {statusMessage.text}
                                     </div>
                                 )}
