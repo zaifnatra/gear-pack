@@ -85,7 +85,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         setIsPending(true)
         try {
             const result = await updateProfile(data)
-            if (result.error) {
+            if (result?.error) {
                 toast.error(result.error)
             } else {
                 toast.success('Profile updated successfully')

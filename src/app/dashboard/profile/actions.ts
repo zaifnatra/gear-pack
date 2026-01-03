@@ -42,6 +42,7 @@ export async function updateProfile(data: ProfileFormValues) {
         return { success: true }
     } catch (error) {
         console.error('Failed to update profile:', error)
+        return { error: 'Failed to update profile' }
     }
 }
 
