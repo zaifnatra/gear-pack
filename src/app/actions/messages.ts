@@ -24,7 +24,15 @@ export async function createConversation(currentUserId: string, participantIds: 
                         }
                     }
                 },
-                include: { participants: true }
+                include: {
+                    participants: {
+                        include: {
+                            user: {
+                                select: { id: true, username: true, fullName: true, avatarUrl: true }
+                            }
+                        }
+                    }
+                }
             })
 
             // Filter for exact match of 2 participants
@@ -46,6 +54,15 @@ export async function createConversation(currentUserId: string, participantIds: 
                         { userId: currentUserId },
                         ...participantIds.map(id => ({ userId: id }))
                     ]
+                }
+            },
+            include: {
+                participants: {
+                    include: {
+                        user: {
+                            select: { id: true, username: true, fullName: true, avatarUrl: true }
+                        }
+                    }
                 }
             }
         })
