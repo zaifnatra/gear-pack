@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { ProfileDropdown } from './ProfileDropdown'
 import { NotificationDropdown } from './NotificationDropdown'
+import { UnreadMessageBadge } from './UnreadMessageBadge'
 
 export async function AppHeader() {
     const supabase = await createClient()
@@ -45,10 +46,13 @@ export async function AppHeader() {
                 <div className="flex items-center gap-2 md:gap-4">
                     {userProfile && <NotificationDropdown userId={userProfile.id} />}
 
-                    <Link href="/dashboard/messages" className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors dark:hover:bg-neutral-800">
-                        <span className="sr-only">Messages</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
-                    </Link>
+                    {userProfile && <UnreadMessageBadge userId={userProfile.id} />}
+                    {!userProfile && (
+                        <Link href="/dashboard/messages" className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors dark:hover:bg-neutral-800">
+                            <span className="sr-only">Messages</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
+                        </Link>
+                    )}
 
                     <ProfileDropdown user={userProfile} />
                 </div>

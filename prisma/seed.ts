@@ -23,6 +23,10 @@ async function main() {
       children: ['Backpack', 'Daypack']
     },
     {
+      name: 'Footwear',
+      children: ['Boots', 'Hiking Shoes', 'Camp Shoes', 'Socks', 'Gaiters']
+    },
+    {
       name: 'Kitchen',
       children: ['Stove', 'Fuel', 'Pot/Pan', 'Utensils', 'Mug/Cup', 'Water Filter', 'Water Bottle']
     },
@@ -32,7 +36,7 @@ async function main() {
     },
     {
       name: 'Clothing (Packed)',
-      children: ['Rain Jacket', 'Puffy/Insulation', 'Fleece', 'Gloves', 'Beanie', 'Camp Shoes']
+      children: ['Rain Jacket', 'Puffy/Insulation', 'Fleece', 'Gloves', 'Beanie']
     },
     {
       name: 'Electronics',
@@ -48,21 +52,37 @@ async function main() {
     }
   ]
 
-  // 3. INSERT INTO DATABASE
+  // 3. INSERT INTO DATABASE (Idempotent-ish)
   for (const cat of categories) {
-    const parent = await prisma.category.create({
-      data: { name: cat.name }
+    // Check if parent exists
+    let parent = await prisma.category.findFirst({
+      where: { name: cat.name, parentId: null }
     })
 
-    console.log(`Created Parent: ${cat.name}`)
+    if (!parent) {
+      parent = await prisma.category.create({
+        data: { name: cat.name }
+      })
+      console.log(`Created Parent: ${cat.name}`)
+    } else {
+      console.log(`Parent exists: ${cat.name}`)
+    }
 
     for (const childName of cat.children) {
-      await prisma.category.create({
-        data: {
-          name: childName,
-          parentId: parent.id
-        }
+      // Check if child exists under this parent
+      const existingChild = await prisma.category.findFirst({
+        where: { name: childName, parentId: parent.id }
       })
+
+      if (!existingChild) {
+        await prisma.category.create({
+          data: {
+            name: childName,
+            parentId: parent.id
+          }
+        })
+        console.log(`  > Created Child: ${childName}`)
+      }
     }
   }
 

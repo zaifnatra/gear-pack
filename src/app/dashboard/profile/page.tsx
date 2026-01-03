@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { ProfileForm } from '@/components/profile/profile-form'
+import { PasswordForm } from '@/components/profile/password-form'
 import { redirect } from 'next/navigation'
 
 export default async function ProfilePage() {
@@ -36,6 +37,10 @@ export default async function ProfilePage() {
                         username: dbUser.username
                     }}
                 />
+            </div>
+
+            <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+                <PasswordForm />
             </div>
         </div>
     )

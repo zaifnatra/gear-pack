@@ -42,6 +42,24 @@ export async function updateProfile(data: ProfileFormValues) {
         return { success: true }
     } catch (error) {
         console.error('Failed to update profile:', error)
-        return { error: 'Failed to update user profile' }
+    }
+}
+
+export async function updatePassword(password: string) {
+    const supabase = await createClient()
+
+    try {
+        const { error } = await supabase.auth.updateUser({
+            password: password
+        })
+
+        if (error) {
+            return { error: error.message }
+        }
+
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to update password:', error)
+        return { error: 'Failed to update password' }
     }
 }

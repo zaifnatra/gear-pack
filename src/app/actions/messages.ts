@@ -169,3 +169,32 @@ export async function markAsRead(conversationId: string, userId: string) {
         return { success: false }
     }
 }
+
+export async function getUnreadMessageCount(userId: string) {
+    try {
+        // Query users where there are unread messages in conversations they handle
+        // Prisma doesn't support comparing two columns directly in the `where` clause easily for this specific case
+        // without raw query or separate check.
+        // HOWEVER: We can't easily do "lastReadAt < conversation.updatedAt" in standard Prisma where clause without field references feature (which might be experimental or limited).
+
+        // Alternative efficient approach: 
+        // Get all participant records for user, filter in memory? No that's bad for perf.
+        // Use raw query or simply: 
+        // Actually, we can fetch all conversations this user is in, and check.
+        // 
+        // Let's try the safest Prisma approach:
+        const participated = await prisma.conversationParticipant.findMany({
+            where: { userId },
+            include: { conversation: true }
+        })
+
+        const count = participated.filter(p => {
+            return new Date(p.conversation.updatedAt) > new Date(p.lastReadAt)
+        }).length
+
+        return { success: true, count }
+    } catch (error) {
+        console.error('Failed to get unread message count:', error)
+        return { success: false, count: 0 }
+    }
+}
