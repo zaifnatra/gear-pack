@@ -198,3 +198,44 @@ export async function getUnreadMessageCount(userId: string) {
         return { success: false, count: 0 }
     }
 }
+
+export async function getOrCreateTripConversation(tripId: string, currentUserId: string) {
+    try {
+        // 1. Check if conversation already linked
+        const trip = await prisma.trip.findUnique({
+            where: { id: tripId },
+            include: {
+                conversation: true,
+                participants: { select: { userId: true } }
+            }
+        })
+
+        if (!trip) return { success: false, error: 'Trip not found' }
+
+        if (trip.conversation) {
+            return { success: true, conversationId: trip.conversation.id }
+        }
+
+        // 2. Create new conversation
+        const allUserIds = new Set(trip.participants.map((p: { userId: string }) => p.userId))
+        allUserIds.add(currentUserId) // Ensure current user is in
+
+        const conversation = await prisma.conversation.create({
+            data: {
+                isGroup: true,
+                name: `Trip: ${trip.name}`,
+                tripId: trip.id,
+                participants: {
+                    create: Array.from(allUserIds).map(userId => ({ userId })) as any
+                }
+            }
+        })
+
+        revalidatePath(`/dashboard/trips/${tripId}`)
+        return { success: true, conversationId: conversation.id }
+
+    } catch (error) {
+        console.error('Failed to get/create trip chat:', error)
+        return { success: false, error: 'Failed' }
+    }
+}

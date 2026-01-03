@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { ProfileDropdown } from './ProfileDropdown'
 import { NotificationDropdown } from './NotificationDropdown'
 import { UnreadMessageBadge } from './UnreadMessageBadge'
+import { GlobalSearchTrigger } from './GlobalSearchTrigger'
+import { ThemeToggle } from './ThemeToggle'
 
 export async function AppHeader() {
     const supabase = await createClient()
@@ -30,20 +32,12 @@ export async function AppHeader() {
 
                 {/* Center: Search (Hidden on small mobile, visible on larger screens) */}
                 <div className="hidden flex-1 items-center justify-center px-6 md:flex">
-                    <div className="relative w-full max-w-md">
-                        <div className="absolute left-2.5 top-2.5 text-neutral-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-                        </div>
-                        <input
-                            type="search"
-                            placeholder="Search gear, trips, people..."
-                            className="h-10 w-full rounded-full border border-neutral-200/60 bg-white/50 pl-10 pr-4 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-neutral-800 dark:bg-neutral-800/50"
-                        />
-                    </div>
+                    {userProfile && <GlobalSearchTrigger currentUserId={userProfile.id} />}
                 </div>
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2 md:gap-4">
+                    <ThemeToggle />
                     {userProfile && <NotificationDropdown userId={userProfile.id} />}
 
                     {userProfile && <UnreadMessageBadge userId={userProfile.id} />}

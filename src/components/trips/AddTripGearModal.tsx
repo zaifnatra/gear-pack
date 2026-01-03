@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getGearItems } from '@/app/actions/gear'
-import { addGearToTrip } from '@/app/actions/tripGear'
+import { addMultipleGearToTrip } from '@/app/actions/tripGear'
 import { useRouter } from 'next/navigation'
 
 interface AddTripGearModalProps {
@@ -17,12 +17,13 @@ export function AddTripGearModal({ isOpen, onClose, tripId, userId }: AddTripGea
     const [gear, setGear] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [selectedId, setSelectedId] = useState<string | null>(null)
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [adding, setAdding] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
             loadGear()
+            setSelectedIds(new Set())
         }
     }, [isOpen])
 
@@ -40,17 +41,42 @@ export function AddTripGearModal({ isOpen, onClose, tripId, userId }: AddTripGea
         item.brand?.toLowerCase().includes(search.toLowerCase())
     )
 
+    const toggleSelection = (id: string) => {
+        const newSet = new Set(selectedIds)
+        if (newSet.has(id)) {
+            newSet.delete(id)
+        } else {
+            newSet.add(id)
+        }
+        setSelectedIds(newSet)
+    }
+
     const handleAdd = async () => {
-        if (!selectedId) return
+        if (selectedIds.size === 0) return
 
         setAdding(true)
-        // Force isShared = true for all items added to this list
-        const res = await addGearToTrip(tripId, selectedId, userId, true)
+        // Import this function at the top (I'll do it in next edit or assume it's there? No I must import it)
+        // For now let's assume I can import it. I'll need to update imports in a separate edit or here if I catch it.
+        // Wait, I can't easily change imports here without replacing the whole file or top. 
+        // I will replace the whole file content to be safe and clean.
+
+        // Dynamic import or separate step? I'll use the imported function.
+        // wait, I need to update the imports first. 
+        // Let's just use the existing addGearToTrip for now in a loop? NO, that's inefficient.
+        // I will update the imports in a separate step or Replace the WHOLE file.
+        // Let's replace only the body for now, and I'll update imports in next step.
+        // Actually, I should just use `import { addMultipleGearToTrip } ...`
+
+        // I will do a subsequent edit to fix the import.
+
+        // Temporary: I'll just use the new function name, assuming I'll fix imports.
+
+        const res = await addMultipleGearToTrip(tripId, Array.from(selectedIds), userId, true)
 
         if (res.success) {
             router.refresh()
             onClose()
-            setSelectedId(null)
+            setSelectedIds(new Set())
         } else {
             alert(res.error || 'Failed to add gear')
         }
@@ -61,7 +87,7 @@ export function AddTripGearModal({ isOpen, onClose, tripId, userId }: AddTripGea
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold">Add Group Gear</h2>
                     <button onClick={onClose} className="rounded-full p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800">
@@ -89,12 +115,15 @@ export function AddTripGearModal({ isOpen, onClose, tripId, userId }: AddTripGea
                         filteredGear.map(item => (
                             <button
                                 key={item.id}
-                                onClick={() => setSelectedId(item.id)}
-                                className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left text-sm transition-all ${selectedId === item.id
+                                onClick={() => toggleSelection(item.id)}
+                                className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left text-sm transition-all ${selectedIds.has(item.id)
                                     ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
                                     : 'border-transparent hover:bg-white dark:hover:bg-neutral-800'
                                     }`}
                             >
+                                <div className={`relative flex h-5 w-5 items-center justify-center rounded border ${selectedIds.has(item.id) ? 'bg-emerald-500 border-emerald-500' : 'border-neutral-300 dark:border-neutral-600'}`}>
+                                    {selectedIds.has(item.id) && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polyline points="20 6 9 17 4 12" /></svg>}
+                                </div>
                                 <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-neutral-200 object-cover dark:bg-neutral-700">
                                     {item.imageUrl ? <img src={item.imageUrl} alt="" className="h-full w-full object-cover" /> : null}
                                 </div>
@@ -105,11 +134,6 @@ export function AddTripGearModal({ isOpen, onClose, tripId, userId }: AddTripGea
                                         {item.weightGrams && <span>• {item.weightGrams}g</span>}
                                     </div>
                                 </div>
-                                {selectedId === item.id && (
-                                    <div className="text-emerald-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                    </div>
-                                )}
                             </button>
                         ))
                     )}
@@ -121,10 +145,10 @@ export function AddTripGearModal({ isOpen, onClose, tripId, userId }: AddTripGea
                     </button>
                     <button
                         onClick={handleAdd}
-                        disabled={!selectedId || adding}
+                        disabled={selectedIds.size === 0 || adding}
                         className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {adding ? 'Adding...' : 'Add Group Item'}
+                        {adding ? 'Adding...' : `Add ${selectedIds.size} Item${selectedIds.size !== 1 ? 's' : ''}`}
                     </button>
                 </div>
             </div>

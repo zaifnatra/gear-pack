@@ -94,3 +94,41 @@ export async function removeGearFromTrip(tripGearId: string) {
         return { success: false, error: 'Failed to remove gear' }
     }
 }
+
+export async function addMultipleGearToTrip(tripId: string, gearIds: string[], userId: string, isShared: boolean = false) {
+    try {
+        // 1. Find existing items to avoid duplicates
+        const existing = await prisma.tripGear.findMany({
+            where: {
+                tripId,
+                gearId: { in: gearIds }
+            },
+            select: { gearId: true }
+        })
+
+        const existingIds = new Set(existing.map(e => e.gearId))
+        const newIds = gearIds.filter(id => !existingIds.has(id))
+
+        if (newIds.length === 0) {
+            return { success: true, count: 0, message: 'All selected items were already in the trip.' }
+        }
+
+        // 2. Bulk create
+        await prisma.tripGear.createMany({
+            data: newIds.map(gearId => ({
+                tripId,
+                gearId,
+                isShared,
+                carriedById: userId,
+                quantity: 1,
+                isPacked: false
+            }))
+        })
+
+        revalidatePath(`/dashboard/trips/${tripId}`)
+        return { success: true, count: newIds.length }
+    } catch (error) {
+        console.error('Failed to add multiple gear:', error)
+        return { success: false, error: 'Failed to add items' }
+    }
+}
