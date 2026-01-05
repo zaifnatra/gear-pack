@@ -186,6 +186,18 @@ export async function signOut() {
         }
     )
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+        try {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { backboardThreadId: null }
+            })
+        } catch (e) {
+            console.error("Failed to clear AI thread on logout", e)
+        }
+    }
+
     await supabase.auth.signOut()
     redirect('/login')
 }

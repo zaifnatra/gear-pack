@@ -4,6 +4,7 @@ import { TripActions } from '@/components/trips/TripActions'
 import { getTripGear } from '@/app/actions/tripGear'
 import { TripGearList } from '@/components/trips/TripGearList'
 import { RecommendedGear } from '@/components/trips/RecommendedGear'
+import { WeatherWidget } from '@/components/trips/WeatherWidget'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -108,11 +109,15 @@ export default async function TripDetailsPage({ params }: PageProps) {
                     <div className="grid grid-cols-3 gap-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <div className="text-center">
                             <div className="text-xs uppercase text-neutral-500 font-semibold mb-1">Distance</div>
-                            <div className="text-xl font-bold">{trip.distance} km</div>
+                            <div className="text-xl font-bold">
+                                {trip.distance ? `${trip.distance} km` : <span className="text-neutral-300 dark:text-neutral-700">—</span>}
+                            </div>
                         </div>
                         <div className="text-center border-l border-neutral-200 dark:border-neutral-800">
                             <div className="text-xs uppercase text-neutral-500 font-semibold mb-1">Elevation</div>
-                            <div className="text-xl font-bold">{trip.elevationGain} m</div>
+                            <div className="text-xl font-bold">
+                                {trip.elevationGain ? `${trip.elevationGain} m` : <span className="text-neutral-300 dark:text-neutral-700">—</span>}
+                            </div>
                         </div>
                         <div className="text-center border-l border-neutral-200 dark:border-neutral-800">
                             <div className="text-xs uppercase text-neutral-500 font-semibold mb-1">Participants</div>
@@ -139,6 +144,14 @@ export default async function TripDetailsPage({ params }: PageProps) {
                         tripType={trip.type}
                         startDate={startDate}
                         days={days}
+                    />
+
+                    {/* Weather Forecast */}
+                    <WeatherWidget
+                        latitude={trip.latitude}
+                        longitude={trip.longitude}
+                        startDate={startDate}
+                        endDate={endDate || undefined}
                     />
 
                     {/* About */}

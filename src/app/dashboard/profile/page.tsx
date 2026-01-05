@@ -34,7 +34,8 @@ export default async function ProfilePage() {
                         fullName: dbUser.fullName,
                         bio: dbUser.bio,
                         avatarUrl: dbUser.avatarUrl,
-                        username: dbUser.username
+                        username: dbUser.username,
+                        location: dbUser.location
                     }}
                 />
             </div>

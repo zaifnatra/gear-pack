@@ -25,6 +25,11 @@ model User {
   fullName  String?
   avatarUrl String?
   bio       String?
+  location  String?
+
+  // AI Memory
+  backboardThreadId String?
+  preferences       Json?     // Stores: { sleepTemp: 'WARM'|'COLD', packStyle: 'ULTRALIGHT'|'COMFORT', experience: 'BEGINNER'|'EXPERT' }
   
   // Timestamps
   createdAt DateTime @default(now())
@@ -223,6 +228,8 @@ model Trip {
   distance      Float?     // User preference unit
   elevationGain Int?       // User preference unit
   externalUrl   String?    // Link to AllTrails, etc.
+  latitude      Float?
+  longitude     Float?
 
   visibility  TripVisibility @default(FRIENDS_ONLY)
   

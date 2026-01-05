@@ -1,9 +1,10 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useTransition, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteTrip } from '@/app/actions/trips'
 import { TripChatButton } from './TripChatButton'
+import { Modal } from '@/components/ui/Modal'
 
 interface TripActionsProps {
     tripId: string
@@ -16,10 +17,13 @@ export function TripActions({ tripId, currentUserId, organizerId }: TripActionsP
     const [isPending, startTransition] = useTransition()
     const isOrganizer = currentUserId === organizerId
 
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this trip? This cannot be undone.')) {
-            return
-        }
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+    const confirmDelete = () => {
+        setShowDeleteModal(false) // Close immediately to show pending state on button if needed, but here we can keep open or close. 
+        // Better to close, or handle loading state inside modal? 
+        // Let's close it and let the main UI show "Deleting..." if we desire, OR keep it open with loading state.
+        // The original code used router.refresh(), so let's stick to the transition logic.
 
         startTransition(async () => {
             const res = await deleteTrip(tripId, currentUserId)
@@ -42,14 +46,42 @@ export function TripActions({ tripId, currentUserId, organizerId }: TripActionsP
             <TripChatButton tripId={tripId} currentUserId={currentUserId} />
 
             {isOrganizer && (
-                <button
-                    onClick={handleDelete}
-                    disabled={isPending}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50/50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/30 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                    {isPending ? 'Deleting...' : 'Delete Trip'}
-                </button>
+                <>
+                    <button
+                        onClick={() => setShowDeleteModal(true)}
+                        disabled={isPending}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50/50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/30 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                        {isPending ? 'Deleting...' : 'Delete Trip'}
+                    </button>
+
+                    <Modal
+                        isOpen={showDeleteModal}
+                        onClose={() => setShowDeleteModal(false)}
+                        title="Delete Trip"
+                    >
+                        <div className="space-y-4">
+                            <p className="text-neutral-600 dark:text-neutral-400">
+                                Are you sure you want to delete this trip? This action cannot be undone and all data associated with this trip will be lost.
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="rounded-lg px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                >
+                                    Delete Trip
+                                </button>
+                            </div>
+                        </div>
+                    </Modal>
+                </>
             )}
         </div>
     )

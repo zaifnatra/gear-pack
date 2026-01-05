@@ -9,6 +9,7 @@ const ProfileSchema = z.object({
     fullName: z.string().min(2, "Name must be at least 2 characters").max(50).optional().or(z.literal("")),
     bio: z.string().max(300, "Bio must be less than 300 characters").optional().or(z.literal("")),
     avatarUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    location: z.string().max(100, "Location must be less than 100 characters").optional().or(z.literal("")),
 })
 
 export type ProfileFormValues = z.infer<typeof ProfileSchema>
@@ -35,6 +36,7 @@ export async function updateProfile(data: ProfileFormValues) {
                 fullName: result.data.fullName || null,
                 bio: result.data.bio || null,
                 avatarUrl: result.data.avatarUrl || null,
+                location: result.data.location || null,
             },
         })
 

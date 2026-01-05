@@ -13,6 +13,7 @@ const ProfileSchema = z.object({
     fullName: z.string().min(2, "Name must be at least 2 characters").max(50).optional().or(z.literal("")),
     bio: z.string().max(300, "Bio must be less than 300 characters").optional().or(z.literal("")),
     avatarUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    location: z.string().max(100, "Location must be less than 100 characters").optional().or(z.literal("")),
 })
 
 type ProfileFormValues = z.infer<typeof ProfileSchema>
@@ -23,6 +24,7 @@ interface ProfileFormProps {
         bio: string | null
         avatarUrl: string | null
         username: string
+        location: string | null
     }
 }
 
@@ -43,6 +45,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
             fullName: initialData.fullName || '',
             bio: initialData.bio || '',
             avatarUrl: initialData.avatarUrl || '',
+            location: initialData.location || '',
         },
     })
 
@@ -159,6 +162,20 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                 />
                 {errors.fullName && (
                     <p className="text-sm text-red-500">{errors.fullName.message}</p>
+                )}
+            </div>
+
+            <div className="space-y-2">
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Location
+                </label>
+                <input
+                    {...register('location')}
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-50"
+                    placeholder="e.g. Seattle, WA"
+                />
+                {errors.location && (
+                    <p className="text-sm text-red-500">{errors.location.message}</p>
                 )}
             </div>
 
