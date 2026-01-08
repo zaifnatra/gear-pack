@@ -32,6 +32,7 @@ CAPABILITIES:
 3. Check User's Gear Closet (get_user_gear tool).
 4. Check User Profile & Preferences (get_user_profile tool).
 5. Add items to a trip (add_gear_to_trip tool).
+6. Save user preferences for next time (update_user_preferences tool).
 
 RULES:
 - When asked for trail options, search the web and return 3-5 options. 
@@ -94,6 +95,11 @@ RULES:
 - DO NOT auto-create a trip unless the user explicitly confirms a specific trail and date.
 - Always check the user's actual gear before recommending a packing list.
 - Check 'get_user_profile' early. If preferences are "Unknown", ASK the user: "Do you run cold or warm when sleeping?" and "Do you prefer Ultralight or Comfort packing?" before generating lists.
+- After the user answers, CALL update_user_preferences with:
+  - sleepTemp: "WARM" or "COLD"
+  - packStyle: "ULTRALIGHT" or "COMFORT"
+  - experience: "BEGINNER", "INTERMEDIATE", or "EXPERT" (if they mention it)
+- Confirm briefly that you saved their preferences.
 
 FORMATTING GUIDELINES:
 1. Use clean markdown formatting.
@@ -157,6 +163,21 @@ Avoid nested formatting.
             name: "get_user_profile",
             description: "Get the user's hiking preferences (temperature, style, experience)",
             parameters: { type: "object", properties: {} }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "update_user_preferences",
+            description: "Save or update the user's hiking preferences for future recommendations",
+            parameters: {
+              type: "object",
+              properties: {
+                sleepTemp: { type: "string", enum: ["WARM", "COLD"] },
+                packStyle: { type: "string", enum: ["ULTRALIGHT", "COMFORT"] },
+                experience: { type: "string", enum: ["BEGINNER", "INTERMEDIATE", "EXPERT"] }
+              }
+            }
           }
         },
         {
