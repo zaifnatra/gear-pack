@@ -31,13 +31,7 @@ export default function Home() {
 
         {/* Hero Section */}
         <main className="flex flex-col items-center max-w-5xl mx-auto text-center mt-12 sm:mt-24">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-xs font-medium text-emerald-700 mb-8 animate-float shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            v2.0 Now Available
-          </div>
+
 
           <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight mb-6 text-neutral-900 drop-shadow-sm">
             Packing Made<br />
