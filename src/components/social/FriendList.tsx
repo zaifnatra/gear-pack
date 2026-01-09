@@ -14,26 +14,28 @@ export function FriendList({ friends }: FriendListProps) {
     }
 
     return (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
             {friends.map((friend) => (
                 <Link
                     key={friend.id}
                     href={`/dashboard/social/${friend.id}/closet`}
-                    className="flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
+                    className="flex flex-col items-center justify-center text-center gap-4 rounded-3xl border border-neutral-200 bg-white p-8 transition-all hover:shadow-xl hover:scale-[1.02] dark:border-neutral-800 dark:bg-neutral-900 min-h-[250px]"
                 >
-                    <div className="h-12 w-12 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                    <div className="h-24 w-24 overflow-hidden rounded-full bg-neutral-100 ring-4 ring-neutral-50 dark:bg-neutral-800 dark:ring-neutral-800">
                         {friend.avatarUrl ? (
                             <img src={friend.avatarUrl} alt={friend.username} className="h-full w-full object-cover" />
                         ) : (
-                            <div className="flex h-full w-full items-center justify-center text-sm font-medium text-neutral-500">
+                            <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-neutral-400">
                                 {friend.username.slice(0, 2).toUpperCase()}
                             </div>
                         )}
                     </div>
-                    <div>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">{friend.fullName || friend.username}</p>
-                        <p className="text-xs text-neutral-500">@{friend.username}</p>
-                        <p className="text-[10px] text-emerald-600 mt-1 font-medium">View Gear Closet &rarr;</p>
+                    <div className="space-y-1">
+                        <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{friend.fullName || friend.username}</p>
+                        <p className="text-sm font-medium text-neutral-500">@{friend.username}</p>
+                    </div>
+                    <div className="mt-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 transition-colors group-hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400">
+                        View Gear Closet
                     </div>
                 </Link>
             ))}

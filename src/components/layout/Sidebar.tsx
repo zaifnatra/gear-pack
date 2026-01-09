@@ -1,52 +1,96 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import React, { useState } from "react";
+import { Sidebar as SidebarPrimitive, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import Link from 'next/link';
+import { motion } from "framer-motion";
+import { Home, Map, Users, Backpack, Bot, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function Sidebar() {
-    const navItems = [
-        { label: 'Home', href: '/dashboard', icon: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></> },
-        { label: 'Trips', href: '/dashboard/trips', icon: <><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" /><path d="M8.5 8.5v.01" /><path d="M16 15.5v.01" /><path d="M12 12v.01" /><path d="M11 17v.01" /><path d="M15 11v.01" /></> },
-        { label: 'Social', href: '/dashboard/social', icon: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></> },
-        { label: 'Gear Closet', href: '/dashboard/gear', icon: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="7.5 4.21 12 6.81 16.5 4.21" /><polyline points="7.5 19.79 7.5 14.6 3 12" /><polyline points="21 12 16.5 14.6 16.5 19.79" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
-        { label: 'AI Assistant', href: '/dashboard/ai-chat', icon: <><rect width="18" height="10" x="3" y="11" rx="2" /><circle cx="12" cy="5" r="2" /><path d="M12 7v4" /><line x1="8" x2="8" y1="16" y2="16" /><line x1="16" x2="16" y1="16" y2="16" /></> },
-    ]
-
-    // Helper to determine if a link is active
-    const pathname = usePathname()
-    const isActive = (href: string) => {
-        if (href === '/dashboard' && pathname !== '/dashboard') return false
-        return pathname?.startsWith(href)
-    }
+    const links = [
+        {
+            label: "Home",
+            href: "/dashboard",
+            icon: (
+                <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+            ),
+        },
+        {
+            label: "Trips",
+            href: "/dashboard/trips",
+            icon: (
+                <Map className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+            ),
+        },
+        {
+            label: "Social",
+            href: "/dashboard/social",
+            icon: (
+                <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+            ),
+        },
+        {
+            label: "Gear Closet",
+            href: "/dashboard/gear",
+            icon: (
+                <Backpack className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+            ),
+        },
+        {
+            label: "AI Assistant",
+            href: "?chat=open",
+            icon: (
+                <Bot className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+            ),
+        },
+    ];
+    const [open, setOpen] = useState(false);
 
     return (
-        <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r border-neutral-200/50 bg-white/60 backdrop-blur-xl py-6 dark:bg-neutral-900/60 dark:border-neutral-800/50 md:flex">
-            <div className="px-6 mb-8">
-                <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-wider font-heading">Menu</h2>
-            </div>
-            <nav className="flex-1 space-y-2 px-4">
-                {navItems.map((item) => {
-                    const active = isActive(item.href)
-                    return (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${active
-                                ? 'bg-emerald-50 text-emerald-900 shadow-sm shadow-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-100 dark:shadow-none'
-                                : 'text-neutral-500 hover:bg-white hover:text-neutral-900 hover:shadow-sm dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
-                                }`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-5 w-5 transition-colors ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300'}`}>
-                                {item.icon}
-                            </svg>
-                            {item.label}
-                        </Link>
-                    )
-                })}
-            </nav>
-
-
-
-        </aside>
-    )
+        <div className={cn(
+            "rounded-md flex flex-col md:flex-row w-full flex-1 max-w-7xl mx-auto overflow-hidden",
+            "h-screen" // Needs fixed height for sidebar to work properly
+        )}>
+            <SidebarPrimitive open={open} setOpen={setOpen}>
+                <SidebarBody className="justify-between gap-10 bg-emerald-50/20 bg-gradient-to-b from-emerald-50/90 via-white/90 to-emerald-50/50 backdrop-blur-xl border-r border-emerald-100/60 dark:bg-neutral-900 dark:from-neutral-900 dark:to-neutral-900 dark:border-neutral-800">
+                    <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                        <div className="mt-8 flex flex-col gap-6">
+                            {links.map((link, idx) => (
+                                <SidebarLink key={idx} link={link} />
+                            ))}
+                        </div>
+                    </div>
+                </SidebarBody>
+            </SidebarPrimitive>
+        </div>
+    );
 }
+
+export const Logo = () => {
+    return (
+        <Link
+            href="#"
+            className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
+        >
+            <div className="h-5 w-6 bg-black dark:bg-white rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" />
+            <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="font-medium text-black dark:text-white whitespace-pre"
+            >
+                Gear Pack
+            </motion.span>
+        </Link>
+    );
+};
+export const LogoIcon = () => {
+    return (
+        <Link
+            href="#"
+            className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
+        >
+            <div className="h-5 w-6 bg-black dark:bg-white rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" />
+        </Link>
+    );
+};

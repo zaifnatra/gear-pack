@@ -76,13 +76,24 @@ export async function createConversation(currentUserId: string, participantIds: 
     }
 }
 
-export async function sendMessage(conversationId: string, senderId: string, content: string) {
+// Send a message (with optional reply)
+export async function sendMessage(conversationId: string, senderId: string, content: string, replyToId?: string) {
     try {
         const message = await prisma.message.create({
             data: {
                 conversationId,
                 senderId,
-                content
+                content,
+                replyToId
+            },
+            include: {
+                replyTo: {
+                    select: {
+                        id: true,
+                        content: true,
+                        sender: { select: { username: true } }
+                    }
+                }
             }
         })
 
@@ -100,12 +111,34 @@ export async function sendMessage(conversationId: string, senderId: string, cont
     }
 }
 
+// Archive a conversation for a specific user
+export async function archiveConversation(conversationId: string, userId: string) {
+    try {
+        await prisma.conversationParticipant.update({
+            where: {
+                userId_conversationId: {
+                    userId,
+                    conversationId
+                }
+            },
+            data: { isArchived: true }
+        })
+        revalidatePath('/dashboard/messages')
+        return { success: true }
+    } catch (error) {
+        return { success: false, error: 'Failed to archive' }
+    }
+}
+
 export async function getConversations(userId: string) {
     try {
         const conversations = await prisma.conversation.findMany({
             where: {
                 participants: {
-                    some: { userId: userId }
+                    some: {
+                        userId: userId,
+                        isArchived: false
+                    }
                 }
             },
             include: {
@@ -132,6 +165,66 @@ export async function getConversations(userId: string) {
     }
 }
 
+export async function editMessage(messageId: string, userId: string, newContent: string) {
+    try {
+        const message = await prisma.message.findUnique({ where: { id: messageId } })
+        if (!message || message.senderId !== userId) return { success: false, error: 'Unauthorized' }
+
+        const updated = await prisma.message.update({
+            where: { id: messageId },
+            data: { content: newContent },
+        })
+
+        revalidatePath('/dashboard/messages')
+        return { success: true, data: updated }
+    } catch (error) {
+        return { success: false, error: 'Failed to edit' }
+    }
+}
+
+export async function deleteMessage(messageId: string, userId: string) {
+    try {
+        const message = await prisma.message.findUnique({ where: { id: messageId } })
+        if (!message || message.senderId !== userId) return { success: false, error: 'Unauthorized' }
+
+        // Soft delete
+        await prisma.message.update({
+            where: { id: messageId },
+            data: {
+                deletedAt: new Date(),
+                content: 'This message was deleted'
+            }
+        })
+
+        revalidatePath('/dashboard/messages')
+        return { success: true }
+    } catch (error) {
+        return { success: false, error: 'Failed to delete' }
+    }
+}
+
+export async function reactToMessage(messageId: string, userId: string, emoji: string) {
+    try {
+        // Toggle logic: if exists, remove it. If not, add it.
+        const existing = await prisma.reaction.findUnique({
+            where: { userId_messageId_emoji: { userId, messageId, emoji } }
+        })
+
+        if (existing) {
+            await prisma.reaction.delete({ where: { id: existing.id } })
+        } else {
+            await prisma.reaction.create({
+                data: { userId, messageId, emoji }
+            })
+        }
+
+        revalidatePath('/dashboard/messages')
+        return { success: true }
+    } catch (error) {
+        return { success: false, error: 'Failed to react' }
+    }
+}
+
 export async function getMessages(conversationId: string) {
     try {
         const messages = await prisma.message.findMany({
@@ -139,6 +232,18 @@ export async function getMessages(conversationId: string) {
             include: {
                 sender: {
                     select: { id: true, username: true, fullName: true, avatarUrl: true }
+                },
+                replyTo: {
+                    select: {
+                        id: true,
+                        content: true,
+                        sender: { select: { username: true } }
+                    }
+                },
+                reactions: {
+                    include: {
+                        user: { select: { id: true, username: true } }
+                    }
                 }
             },
             orderBy: { createdAt: 'asc' }

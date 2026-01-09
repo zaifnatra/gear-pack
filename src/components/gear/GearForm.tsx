@@ -24,6 +24,8 @@ export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
     const [condition, setCondition] = useState(initialData?.condition || 'GOOD')
     const [imageUrl, setImageUrl] = useState<string | null>(initialData?.imageUrl || null)
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
     useEffect(() => {
         // Load categories on mount
         getCategories().then((res) => {
@@ -33,8 +35,12 @@ export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
         })
     }, [])
 
-    const handleDelete = async () => {
-        if (!initialData || !confirm('Are you sure you want to delete this item?')) return
+    const handleDeleteClick = () => {
+        setShowDeleteConfirm(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!initialData) return
 
         startTransition(async () => {
             const res = await deleteGearItem(initialData.id, userId)
@@ -79,6 +85,46 @@ export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
                 alert('Failed to save item')
             }
         })
+    }
+
+    if (showDeleteConfirm) {
+        return (
+            <div className="space-y-4 py-4 animate-in fade-in zoom-in duration-200">
+                <div className="flex flex-col items-center justify-center text-center space-y-3 p-4 bg-red-50 rounded-xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30">
+                    <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 dark:bg-red-900/40 dark:text-red-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            <line x1="10" x2="10" y1="11" y2="17" />
+                            <line x1="14" x2="14" y1="11" y2="17" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-red-900 dark:text-red-400">Delete "{initialData?.name}"?</h3>
+                        <p className="text-sm text-red-700/80 dark:text-red-400/80 mt-1">This action cannot be undone. Are you sure?</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1 rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleConfirmDelete}
+                        disabled={isPending}
+                        className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                        {isPending ? 'Deleting...' : 'Yes, Delete'}
+                    </button>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -165,7 +211,7 @@ export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
                 {initialData && (
                     <button
                         type="button"
-                        onClick={handleDelete}
+                        onClick={handleDeleteClick}
                         disabled={isPending}
                         className="flex-1 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/30 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20"
                     >

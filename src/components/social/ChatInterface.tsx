@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { sendMessage, getConversations, getMessages, createConversation, markAsRead } from '@/app/actions/messages'
+import { sendMessage, getConversations, getMessages, createConversation, markAsRead, editMessage, deleteMessage, reactToMessage, archiveConversation } from '@/app/actions/messages'
 import { getFriends } from '@/app/actions/social'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { MessageBubble } from './MessageBubble'
+import { X, Reply, Archive } from 'lucide-react'
 
 interface ChatInterfaceProps {
     currentUserId: string
@@ -17,6 +19,10 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
     const [newMessage, setNewMessage] = useState('')
     const [conversations, setConversations] = useState<any[]>([])
 
+    // Rich Messaging State
+    const [replyingTo, setReplyingTo] = useState<any>(null)
+    const [editingMessage, setEditingMessage] = useState<any>(null)
+
     // New Chat State
     const [view, setView] = useState<'conversations' | 'new-chat'>('conversations')
     const [friends, setFriends] = useState<any[]>([])
@@ -24,6 +30,7 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
     const [groupName, setGroupName] = useState('')
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
 
@@ -51,7 +58,7 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
     // Scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
+    }, [messages, replyingTo, editingMessage])
 
     async function loadConversations() {
         const res = await getConversations(currentUserId)
@@ -99,13 +106,66 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
 
         const content = newMessage
         setNewMessage('') // Optimistic clear
+        setReplyingTo(null)
+        setEditingMessage(null)
 
-        const res = await sendMessage(activeConversation.id, currentUserId, content)
-        if (!res.success) {
-            toast.error('Failed to send')
+        if (editingMessage) {
+            const res = await editMessage(editingMessage.id, currentUserId, content)
+            if (!res.success) toast.error('Failed to edit')
+            else refreshMessages()
         } else {
-            refreshMessages()
+            const res = await sendMessage(activeConversation.id, currentUserId, content, replyingTo?.id)
+            if (!res.success) toast.error('Failed to send')
+            else refreshMessages()
         }
+    }
+
+    const handleReply = (msg: any) => {
+        setReplyingTo(msg)
+        setEditingMessage(null)
+        inputRef.current?.focus()
+    }
+
+    const handleEdit = (msg: any) => {
+        setEditingMessage(msg)
+        setReplyingTo(null)
+        setNewMessage(msg.content)
+        inputRef.current?.focus()
+    }
+
+    const handleDelete = async (msg: any) => {
+        toast.promise(deleteMessage(msg.id, currentUserId), {
+            loading: 'Deleting message...',
+            success: () => {
+                refreshMessages()
+                return 'Message deleted'
+            },
+            error: 'Failed to delete'
+        })
+    }
+
+    const handleReact = async (msgId: string, emoji: string) => {
+        const res = await reactToMessage(msgId, currentUserId, emoji)
+        if (res.success) refreshMessages()
+    }
+
+    const handleArchive = async (e: React.MouseEvent, conversationId: string) => {
+        e.stopPropagation() // Prevent opening chat
+        toast.promise(archiveConversation(conversationId, currentUserId), {
+            loading: 'Archiving chat...',
+            success: () => {
+                loadConversations()
+                setActiveConversation(null)
+                return 'Conversation archived'
+            },
+            error: 'Failed to archive'
+        })
+    }
+
+    const cancelAction = () => {
+        setReplyingTo(null)
+        setEditingMessage(null)
+        setNewMessage('')
     }
 
     // Toggle friend selection for new chat
@@ -165,13 +225,15 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                                     {friends.map(friend => {
                                         const isSelected = selectedFriendIds.includes(friend.id)
                                         return (
-                                            <button
+                                            <div
                                                 key={friend.id}
                                                 onClick={() => toggleFriendSelection(friend.id)}
-                                                className={`flex w-full items-center gap-3 rounded-xl p-2 transition-all ${isSelected
-                                                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100'
-                                                        : 'hover:bg-white dark:hover:bg-neutral-800'
+                                                className={`flex w-full items-center gap-3 rounded-xl p-2 transition-all cursor-pointer ${isSelected
+                                                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100'
+                                                    : 'hover:bg-white dark:hover:bg-neutral-800'
                                                     }`}
+                                                role="button"
+                                                tabIndex={0}
                                             >
                                                 <div className="h-8 w-8 overflow-hidden rounded-full bg-neutral-200">
                                                     {friend.avatarUrl && <img src={friend.avatarUrl} className="h-full w-full object-cover" />}
@@ -182,7 +244,7 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                                     </div>
                                                 )}
-                                            </button>
+                                            </div>
                                         )
                                     })}
                                 </div>
@@ -217,14 +279,24 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                                 const meta = getConversationMeta(conv)
                                 const lastMsg = conv.messages?.[0]
                                 return (
-                                    <button
+                                    <div
                                         key={conv.id}
                                         onClick={() => setActiveConversation(conv)}
-                                        className={`flex w-full items-start gap-3 rounded-2xl p-3 transition-all ${activeConversation?.id === conv.id
-                                                ? 'bg-white shadow-sm dark:bg-neutral-800'
-                                                : 'hover:bg-white/50 dark:hover:bg-neutral-800/50'
+                                        className={`group relative flex w-full items-start gap-3 rounded-2xl p-3 transition-all cursor-pointer ${activeConversation?.id === conv.id
+                                            ? 'bg-white shadow-sm dark:bg-neutral-800'
+                                            : 'hover:bg-white/50 dark:hover:bg-neutral-800/50'
                                             }`}
+                                        role="button"
+                                        tabIndex={0}
                                     >
+                                        <button
+                                            onClick={(e) => handleArchive(e, conv.id)}
+                                            className="absolute right-2 top-2 rounded-full p-1.5 opacity-0 transition-opacity hover:bg-neutral-200 group-hover:opacity-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 z-10"
+                                            title="Archive Conversation"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+
                                         <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-neutral-200 border border-neutral-200 dark:border-neutral-700">
                                             {meta.avatar ? (
                                                 <img src={meta.avatar} className="h-full w-full object-cover" />
@@ -241,7 +313,6 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                                         <div className="flex flex-1 flex-col items-start min-w-0">
                                             <div className="flex w-full items-center justify-between">
                                                 <span className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100 font-heading">{meta.name}</span>
-                                                {/* <span className="text-xs text-neutral-400">Time</span> */}
                                             </div>
                                             <span className="truncate text-xs text-neutral-500 w-full text-left">
                                                 {lastMsg ? (
@@ -251,10 +322,11 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                                                 ) : 'No messages'}
                                             </span>
                                         </div>
-                                    </button>
+                                    </div>
                                 )
                             })}
                         </div>
+
                     )}
                 </div>
             </div>
@@ -303,57 +375,58 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                        <div className="flex-1 overflow-y-auto p-4 flex flex-col">
                             {messages.map((msg, i) => {
                                 const isMe = msg.senderId === currentUserId
-                                const showAvatar = !isMe && (i === 0 || messages[i - 1].senderId !== msg.senderId)
+                                const showAvatar = !isMe && (i === 0 || messages[i - 1].senderId !== msg.senderId) // Only first message of streak
+                                const meta = getConversationMeta(activeConversation)
 
                                 return (
-                                    <div key={msg.id || i} className={`flex gap-3 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                        {!isMe && (
-                                            <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-neutral-200 mt-1">
-                                                {showAvatar ? (
-                                                    msg.sender.avatarUrl ? (
-                                                        <img src={msg.sender.avatarUrl} className="h-full w-full object-cover" />
-                                                    ) : (
-                                                        <div className="flex h-full w-full items-center justify-center bg-neutral-300 text-[10px] font-bold">
-                                                            {msg.sender.username.substring(0, 2).toUpperCase()}
-                                                        </div>
-                                                    )
-                                                ) : <div className="w-8" />}
-                                            </div>
-                                        )}
-
-                                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                                            {!isMe && showAvatar && (
-                                                <span className="ml-1 mb-1 text-[10px] uppercase tracking-wider font-bold text-neutral-400">
-                                                    {msg.sender.fullName || msg.sender.username}
-                                                </span>
-                                            )}
-                                            <div className={`rounded-2xl px-4 py-2 text-sm shadow-sm ${isMe
-                                                ? 'bg-emerald-600 text-white rounded-br-none'
-                                                : 'bg-white text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100 rounded-bl-none'
-                                                }`}>
-                                                {msg.content}
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <MessageBubble
+                                        key={msg.id || i}
+                                        message={msg}
+                                        isMe={isMe}
+                                        isGroup={meta.isGroup}
+                                        showAvatar={showAvatar}
+                                        onReply={handleReply}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                        onReact={handleReact}
+                                    />
                                 )
                             })}
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Input */}
+                        {/* Input Area */}
                         <div className="p-4 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
+                            {/* Reply/Edit Context Banner */}
+                            {(replyingTo || editingMessage) && (
+                                <div className="mb-3 flex items-center justify-between rounded-lg border-l-4 border-emerald-500 bg-neutral-50 p-3 shadow-sm dark:bg-neutral-800/50">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                            {editingMessage ? 'Editing Message' : `Replying to ${replyingTo.sender.username}`}
+                                        </span>
+                                        <span className="truncate text-sm text-neutral-600 dark:text-neutral-300 max-w-[300px]">
+                                            {editingMessage ? editingMessage.content : replyingTo.content}
+                                        </span>
+                                    </div>
+                                    <button onClick={cancelAction} className="rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700">
+                                        <X className="h-4 w-4 text-neutral-500" />
+                                    </button>
+                                </div>
+                            )}
+
                             <form
                                 onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                                 className="flex gap-2 items-center"
                             >
                                 <input
+                                    ref={inputRef}
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Message..."
+                                    placeholder={editingMessage ? "Edit message..." : "Message..."}
                                     className="flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 transition-all font-medium"
                                 />
                                 <button

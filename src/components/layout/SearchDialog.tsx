@@ -50,7 +50,7 @@ export function SearchDialog({ isOpen, onClose, currentUserId }: SearchDialogPro
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                className="fixed inset-0 bg-transparent transition-opacity"
                 onClick={onClose}
             />
 

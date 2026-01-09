@@ -1,5 +1,7 @@
 
 import Link from "next/link";
+import { Typewriter } from "@/components/ui/typewriter-text";
+import { FeaturesGallery } from "@/components/landing/FeaturesGallery";
 
 export default function Home() {
   return (
@@ -33,9 +35,18 @@ export default function Home() {
         <main className="flex flex-col items-center max-w-5xl mx-auto text-center mt-12 sm:mt-24">
 
 
-          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight mb-6 text-neutral-900 drop-shadow-sm">
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight mb-6 text-neutral-900 drop-shadow-sm h-[1.25em] sm:h-[1.5em] md:h-auto flex flex-col items-center justify-start">
             Packing Made<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Effortless.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
+              <Typewriter
+                text={["Effortless.", "Smart.", "Yours."]}
+                speed={100}
+                deleteSpeed={60}
+                delay={2000}
+                loop={true}
+                cursor="|"
+              />
+            </span>
           </h1>
 
           <p className="max-w-xl text-lg sm:text-xl text-neutral-500 mb-10 leading-relaxed font-medium">
@@ -49,10 +60,12 @@ export default function Home() {
           </div>
         </main>
 
+        {/* Feature Gallery */}
+        <FeaturesGallery />
+
         <footer className="mt-32 mb-12 text-center text-neutral-400 text-sm">
           <p>&copy; {new Date().getFullYear()} Gear-Pack.</p>
         </footer>
-
       </div>
     </div>
   );
