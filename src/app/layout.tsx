@@ -4,6 +4,8 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/next"
+
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
@@ -37,6 +39,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
