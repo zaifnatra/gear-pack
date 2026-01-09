@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { AppHeader } from "@/components/layout/AppHeader"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { Sidebar } from "@/components/layout/Sidebar"
@@ -10,7 +11,9 @@ export default function DashboardLayout({
 }>) {
     return (
         <>
-            <AIChat />
+            <Suspense fallback={null}>
+                <AIChat />
+            </Suspense>
             <div className="relative flex min-h-screen flex-col bg-neutral-50/50 dark:bg-neutral-950 md:flex-row overflow-hidden font-sans">
                 {/* Background Auroras (Fixed) */}
                 <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
