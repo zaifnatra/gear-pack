@@ -94,12 +94,36 @@ RULES:
 - **Coordinates & Weather**: You MUST search for the "latitude and longitude" of the trail head or mountain peak. These are REQUIRED for the weather widget to work. Do not leave them blank.
 - DO NOT auto-create a trip unless the user explicitly confirms a specific trail and date.
 - Always check the user's actual gear before recommending a packing list.
-- Check 'get_user_profile' early. If preferences are "Unknown", ASK the user: "Do you run cold or warm when sleeping?" and "Do you prefer Ultralight or Comfort packing?" before generating lists.
-- After the user answers, CALL update_user_preferences with:
-  - sleepTemp: "WARM" or "COLD"
-  - packStyle: "ULTRALIGHT" or "COMFORT"
-  - experience: "BEGINNER", "INTERMEDIATE", or "EXPERT" (if they mention it)
-- Confirm briefly that you saved their preferences.
+- Preferences are USER-focused and stable tendencies (not per-trip conditions). Use the stored preference profile to influence:
+  1) gear lists
+  2) trail/trek recommendations
+- Preference keys (allowed values):
+  - pack_style: ultralight | balanced | comfort_first
+  - rain_tolerance: avoid_rain | light_rain_ok | steady_rain_ok
+  - snow_ice_comfort: none | microspikes_ok | crampons_ok | glacier_ok
+  - exposure_tolerance: low | medium | high
+  - scrambling_comfort: hiking_only | hands_on | technical_rope
+  - shelter_preference: tent | tarp | hammock | hut
+  - cooking_preference: no_cook | canister | alcohol | liquid_fuel
+  - nav_confidence: high | medium | low
+  - remoteness_tolerance: frontcountry | moderate | remote
+  - offline_maps_preference: always | sometimes | never
+  - sat_messenger_preference: yes | no
+  - water_treatment_preference: filter | tabs | uv | none
+  - dry_stretch_tolerance: avoid | some_ok | long_ok
+  - carry_system_preference: bottles | bladder | mixed
+  - footwear_preference: trail_runners | mid_boots | high_boots
+  - feet_strategy: keep_dry | drain_fast
+  - bug_tolerance: low | medium | high
+  - sun_tolerance: low | medium | high
+- When applying preferences:
+  - confidence="default" => weak prior (do not over-constrain)
+  - confidence="confirmed" => strong constraint unless user explicitly overrides for the current trip
+- Store preferences when casually mentioned. If a user says “I prefer X / I hate X / I always X / I never X”, treat it as CONFIRMED.
+- If you infer a preference from behavior (e.g. “I avoid ridges because heights”), store it as INFERRED.
+- Preference questions: Only ask when instructed in [Current Context], and ask at most ONE single-choice preference question per response.
+- If you see an instruction in [Current Context] telling you to ask a preference question, follow it exactly and do not ask any other preference questions.
+- After the user answers a preference question, CALL update_user_preferences to save it with confidence="confirmed".
 
 FORMATTING GUIDELINES:
 1. Use clean markdown formatting.
@@ -161,7 +185,7 @@ Avoid nested formatting.
           type: "function",
           function: {
             name: "get_user_profile",
-            description: "Get the user's hiking preferences (temperature, style, experience)",
+            description: "Get the user's preference profile (key/value/confidence) and basic info",
             parameters: { type: "object", properties: {} }
           }
         },
@@ -173,10 +197,47 @@ Avoid nested formatting.
             parameters: {
               type: "object",
               properties: {
-                sleepTemp: { type: "string", enum: ["WARM", "COLD"] },
-                packStyle: { type: "string", enum: ["ULTRALIGHT", "COMFORT"] },
-                experience: { type: "string", enum: ["BEGINNER", "INTERMEDIATE", "EXPERT"] }
-              }
+                updates: {
+                  type: "array",
+                  description: "A list of preference updates; use confidence=confirmed for explicit statements, inferred for implicit.",
+                  items: {
+                    type: "object",
+                    properties: {
+                      key: {
+                        type: "string",
+                        enum: [
+                          "pack_style",
+                          "rain_tolerance",
+                          "snow_ice_comfort",
+                          "exposure_tolerance",
+                          "scrambling_comfort",
+                          "shelter_preference",
+                          "cooking_preference",
+                          "nav_confidence",
+                          "remoteness_tolerance",
+                          "offline_maps_preference",
+                          "sat_messenger_preference",
+                          "water_treatment_preference",
+                          "dry_stretch_tolerance",
+                          "carry_system_preference",
+                          "footwear_preference",
+                          "feet_strategy",
+                          "bug_tolerance",
+                          "sun_tolerance"
+                        ]
+                      },
+                      value: {
+                        type: "string",
+                        description: "Must be one of the allowed values for the given key (see assistant instructions)."
+                      },
+                      confidence: { type: "string", enum: ["default", "inferred", "confirmed"] },
+                      evidence: { type: "string", description: "Short snippet of user text (optional)" }
+                    },
+                    required: ["key", "value", "confidence"]
+                  }
+                }
+              },
+              required: ["updates"]
             }
           }
         },

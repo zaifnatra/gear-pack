@@ -12,6 +12,15 @@ import {
     getThreadHistory
 } from '@/lib/backboard'
 import { createTrip, getUserGear, addGearToTrip, getUserProfile, updateUserPreferences } from '@/lib/ai/tools'
+import {
+    applyPreferenceUpdates,
+    buildSingleChoiceQuestion,
+    extractPreferenceUpdatesFromMessage,
+    isAdviceRequestThatDependsOnPreferences,
+    isGearTripTrailTopic,
+    normalizePreferenceStore,
+    pickHighImpactMissingPreference
+} from '@/lib/ai/preferences'
 
 export async function getChatHistory(): Promise<ChatResponse[]> {
     const supabase = await createClient()
@@ -155,13 +164,60 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
         isNewThread = true
     }
 
+    // 1b. Load/normalize preferences, increment turn, and extract implicit/explicit preferences from this message.
+    const timestamp = new Date().toISOString()
+    const { store: prefStoreInitial } = normalizePreferenceStore((dbUser as any)?.preferences, timestamp)
+    let prefStore = prefStoreInitial
+
+    // Reset question state if we are on a new Backboard thread
+    if (prefStore.question_state?.thread_id !== threadId) {
+        prefStore.question_state = { thread_id: threadId, user_turn: 0, last_question_turn: -9999, asked_keys: [] }
+    }
+
+    prefStore.question_state = prefStore.question_state || { thread_id: threadId, user_turn: 0, last_question_turn: -9999, asked_keys: [] }
+    prefStore.question_state.user_turn = (prefStore.question_state.user_turn || 0) + 1
+
+    const lastAskedKey = prefStore.question_state.last_question_key
+    const lastAskedKeyIsDefault = lastAskedKey ? prefStore.profile[lastAskedKey]?.confidence === "default" : false
+    const extractedUpdates = extractPreferenceUpdatesFromMessage(userMessage, { lastAskedKey, lastAskedKeyIsDefault })
+
+    if (extractedUpdates.length > 0) {
+        prefStore = applyPreferenceUpdates(prefStore, extractedUpdates, timestamp).store
+    }
+
+    // 1c. Decide whether to ask ONE casual preference question (rate-limited).
+    const minTurnsBetweenQuestions = 10
+    let preferenceQuestion: ReturnType<typeof buildSingleChoiceQuestion> | null = null
+    const turnsSinceLastQuestion =
+        (prefStore.question_state.user_turn || 0) - (prefStore.question_state.last_question_turn || -9999)
+
+    if (
+        turnsSinceLastQuestion >= minTurnsBetweenQuestions &&
+        isGearTripTrailTopic(userMessage) &&
+        isAdviceRequestThatDependsOnPreferences(userMessage)
+    ) {
+        const key = pickHighImpactMissingPreference(prefStore)
+        if (key) {
+            preferenceQuestion = buildSingleChoiceQuestion(key)
+            prefStore.question_state.last_question_turn = prefStore.question_state.user_turn || 0
+            prefStore.question_state.last_question_key = key
+            prefStore.question_state.asked_keys = [...(prefStore.question_state.asked_keys || []), key]
+        }
+    }
+
+    // Persist updated preference store (defaults + extracted prefs + question state/turns)
+    await prisma.user.update({
+        where: { id: user.id },
+        data: { preferences: prefStore }
+    })
+
     // 2. Add Message and Trigger Run
     const today = new Date().toDateString()
-    const userPreferences =
-        (dbUser as any)?.preferences && typeof (dbUser as any).preferences === 'object'
-            ? JSON.stringify((dbUser as any).preferences)
-            : "Unknown"
-    const contextMessage = `[Current Context: Today is ${today}. User Location: ${dbUser?.location || "Unknown"}. User Preferences: ${userPreferences}] ${userMessage}`
+    const userPreferences = JSON.stringify(prefStore.profile)
+    const preferenceQuestionDirective = preferenceQuestion
+        ? ` Ask EXACTLY ONE single-choice preference question before anything else: ${preferenceQuestion.question} The user must answer with exactly one of the listed values.`
+        : ""
+    const contextMessage = `[Current Context: Today is ${today}. User Location: ${dbUser?.location || "Unknown"}. User Preferences (stable profile): ${userPreferences}.${preferenceQuestionDirective}] ${userMessage}`
 
     const run = await addMessage(threadId, 'user', contextMessage)
 
