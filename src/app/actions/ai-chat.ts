@@ -278,7 +278,7 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
     // Persist updated preference store (defaults + extracted prefs + question state/turns)
     await prisma.user.update({
         where: { id: user.id },
-        data: { preferences: prefStore }
+        data: { preferences: prefStore as any }
     })
 
     // 2. Add Message and Trigger Run
