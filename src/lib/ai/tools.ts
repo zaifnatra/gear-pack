@@ -5,6 +5,7 @@ import {
     normalizePreferenceStore
 } from "@/lib/ai/preferences"
 import type { PreferenceKey, PreferenceUpdate } from "@/lib/ai/preferences"
+import { fetchWeatherForecast, geocodeLocationName } from "@/lib/ai/open-meteo"
 
 // Tool 1: Create Trip
 interface CreateTripParams {
@@ -203,5 +204,44 @@ export async function updateUserPreferences(
     } catch (e) {
         console.error("Tool Error: updateUserPreferences", e)
         return { success: false, error: "Failed to update user preferences." }
+    }
+}
+
+// Tool 6: Geocode Location Name (Open-Meteo Geocoding)
+export async function geocodeLocation(params: { name: string; limit?: number }) {
+    try {
+        const results = await geocodeLocationName(params.name, params.limit ?? 5)
+        return { success: true, results }
+    } catch (e: any) {
+        console.error("Tool Error: geocodeLocation", e)
+        return { success: false, error: e?.message || "Failed to geocode location." }
+    }
+}
+
+type TripKindForForecast = "DAY_HIKE" | "OVERNIGHT" | "MULTI_DAY" | "THRU_HIKE" | "OTHER"
+
+// Tool 7: Weather Forecast (Open-Meteo)
+export async function getWeatherForecast(params: {
+    latitude: number
+    longitude: number
+    startDate: string
+    endDate: string
+    tripType?: TripKindForForecast
+}) {
+    try {
+        const tripType = params.tripType
+        const isSameDay = params.startDate.trim().slice(0, 10) === params.endDate.trim().slice(0, 10)
+        const mode = tripType ? (tripType === "DAY_HIKE" ? "hourly" : "daily") : (isSameDay ? "hourly" : "daily")
+        const forecast = await fetchWeatherForecast({
+            latitude: params.latitude,
+            longitude: params.longitude,
+            startDate: params.startDate,
+            endDate: params.endDate,
+            mode
+        })
+        return { success: true, forecast }
+    } catch (e: any) {
+        console.error("Tool Error: getWeatherForecast", e)
+        return { success: false, error: e?.message || "Failed to fetch weather forecast." }
     }
 }

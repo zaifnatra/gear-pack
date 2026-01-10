@@ -5,13 +5,19 @@ import { prisma } from '@/lib/prisma'
 import {
     createThread,
     addMessage,
-    getAssistantId,
-    backboardFetch,
     submitToolOutputs,
     getLatestResponse,
     getThreadHistory
 } from '@/lib/backboard'
-import { createTrip, getUserGear, addGearToTrip, getUserProfile, updateUserPreferences } from '@/lib/ai/tools'
+import {
+    addGearToTrip,
+    createTrip,
+    geocodeLocation,
+    getUserGear,
+    getUserProfile,
+    getWeatherForecast,
+    updateUserPreferences
+} from '@/lib/ai/tools'
 import {
     applyPreferenceUpdates,
     buildSingleChoiceQuestion,
@@ -93,51 +99,94 @@ export async function getChatHistory(): Promise<ChatResponse[]> {
         })
 }
 
-// System Prompt with recent requirements
-const SYSTEM_PROMPT = `
-You are PackBot, an expert hiking guide and logistics assistant.
-Your goal is to help users plan outdoor trips and pack the right gear.
-
-CAPABILITIES:
-1. Search the web for trails (Backboard native).
-2. Create Trips in the database (create_trip tool).
-3. Check User's Gear Closet (get_user_gear tool).
-4. Add items to a trip (add_gear_to_trip tool).
-
-RULES:
-- When asked for trail options, search the web and return 3-5 options. 
-- FORMAT "Trail Options" as a JSON object inside a code block or purely as JSON validation if possible, but for now use this structure in your text response:
-  
-  \`\`\`json
-  {
-    "type": "trail_options",
-    "options": [
-      {
-        "id": "trail_1",
-        "name": "Trail Name",
-        "location": "Location",
-        "driveTime": "45 min",
-        "distance": 6.0,
-        "elevationGain": 400,
-        "difficulty": "MODERATE",
-        "description": "Short summary",
-        "externalUrl": "..."
-      }
-    ]
-  }
-  \`\`\`
-
-- DO NOT auto-create a trip unless the user explicitly confirms a specific trail and date.
-- Always check the user's actual gear before recommending a packing list.
-- Be conversational and safety-focused.
-`
-
 export interface ChatResponse {
     message: string
     isJSON: boolean
     data?: any
     quickActions?: any[]
     role?: string
+}
+
+function buildOutOfScopeResponse(): ChatResponse {
+    return {
+        role: 'assistant',
+        isJSON: false,
+        message:
+            "Sorry — I can’t help with that topic. I’m PackBot: hiking/trail planning, trip logistics, and gear packing. Ask me about a hike you want to do, your trip dates/location, or what gear you have.",
+        quickActions: [
+            { label: "Find a hike nearby", value: "Find a hike nearby" },
+            { label: "Plan a weekend trip", value: "Plan a weekend trip" },
+            { label: "Analyze my gear closet", value: "Analyze my gear closet" }
+        ]
+    }
+}
+
+function isClearlyOutOfScope(message: string) {
+    const text = message.toLowerCase()
+    // Keep this conservative; it exists to prevent obvious "not PackBot" topics.
+    const isMath =
+        /\b(integral|derivative|calculus|algebra|geometry|trigonometry|matrix|proof|theorem|equation|polynomial|math)\b/.test(
+            text
+        ) ||
+        // algebra-ish expressions like "3x+12" (avoid catching "5k hike")
+        /\b\d+\s*[xyz]\s*[\+\-*/^=]/.test(text) ||
+        /[\+\-*/^=]\s*\d+\s*[xyz]\b/.test(text)
+
+    const isPolitics =
+        /\b(politics|political|election|vote|voting|democrat|republican|congress|senate|parliament|president|prime minister)\b/.test(
+            text
+        )
+
+    const isDating = /\b(dating|relationship|girlfriend|boyfriend|abg)\b/.test(text)
+
+    return isMath || isPolitics || isDating
+}
+
+async function classifyScopeWithBackboard(userMessage: string) {
+    const scopeAssistantId = process.env.BACKBOARD_SCOPE_ASSISTANT_ID
+    if (!scopeAssistantId) return null
+
+    const threadId = await createThread(scopeAssistantId)
+    if (!threadId) return null
+
+    const prompt = `Decide whether the user's message is in-scope for GearPack/PackBot.
+
+IN-SCOPE:
+- hiking, backpacking, camping, trails, mountains, trip planning/logistics, outdoor safety, navigation, packing/gear
+- brief small talk (greetings, thanks, short jokes) is OK
+
+OUT-OF-SCOPE:
+- anything unrelated to outdoors/trips/gear (e.g. math homework, politics, dating advice)
+
+Return ONLY valid JSON (no markdown) with this shape:
+{"in_scope": true, "reason": "short reason"}
+
+User message:
+"""${userMessage.replaceAll('"""', '"')}"""`
+
+    await addMessage(threadId, 'user', prompt)
+
+    // Backboard runs are effectively attached to the message; poll by reading thread until an assistant message appears.
+    const start = Date.now()
+    const timeoutMs = 8000
+    const intervalMs = 400
+
+    while (Date.now() - start < timeoutMs) {
+        const responseText = await getLatestResponse(threadId)
+        if (responseText && responseText.trim()) {
+            try {
+                const parsed = JSON.parse(responseText.trim())
+                if (typeof parsed?.in_scope === 'boolean') {
+                    return { inScope: parsed.in_scope, reason: typeof parsed.reason === 'string' ? parsed.reason : undefined }
+                }
+            } catch {
+                // Ignore parse errors; keep polling briefly.
+            }
+        }
+        await new Promise((r) => setTimeout(r, intervalMs))
+    }
+
+    return null
 }
 
 export async function sendAIMessage(userMessage: string): Promise<ChatResponse> {
@@ -151,7 +200,6 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
     // 1. Get or Create Thread
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
     let threadId = (dbUser as any)?.backboardThreadId
-    let isNewThread = false
 
     if (!threadId) {
         threadId = await createThread()
@@ -161,7 +209,6 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
             where: { id: user.id },
             data: { backboardThreadId: threadId }
         })
-        isNewThread = true
     }
 
     // 1b. Load/normalize preferences, increment turn, and extract implicit/explicit preferences from this message.
@@ -180,6 +227,20 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
     const lastAskedKey = prefStore.question_state.last_question_key
     const lastAskedKeyIsDefault = lastAskedKey ? prefStore.profile[lastAskedKey]?.confidence === "default" : false
     const extractedUpdates = extractPreferenceUpdatesFromMessage(userMessage, { lastAskedKey, lastAskedKeyIsDefault })
+    const isPreferenceAnswer =
+        !!lastAskedKey &&
+        extractedUpdates.some((u) => u.key === lastAskedKey && u.confidence === "confirmed")
+
+    // Only hard-block obviously off-topic categories. Everything else (including small talk) goes to the assistant.
+    // If BACKBOARD_SCOPE_ASSISTANT_ID is configured, use it to AI-classify scope.
+    if (!isPreferenceAnswer && isClearlyOutOfScope(userMessage)) {
+        return buildOutOfScopeResponse()
+    }
+
+    if (!isPreferenceAnswer) {
+        const scope = await classifyScopeWithBackboard(userMessage)
+        if (scope && scope.inScope === false) return buildOutOfScopeResponse()
+    }
 
     if (extractedUpdates.length > 0) {
         prefStore = applyPreferenceUpdates(prefStore, extractedUpdates, timestamp).store
@@ -222,7 +283,7 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
     const run = await addMessage(threadId, 'user', contextMessage)
 
     // 3. Poll for Completion / Tool Calls
-    let runStatus = await pollRun(threadId, run, user.id)
+    await pollRun(threadId, run, user.id)
 
     // 4. Get Response
     const responseText = await getLatestResponse(threadId)
@@ -325,6 +386,12 @@ async function pollRun(threadId: string, initialRun: any, userId: string) {
                         output = JSON.stringify(res)
                     } else if (call.function.name === 'add_gear_to_trip') {
                         const res = await addGearToTrip(args)
+                        output = JSON.stringify(res)
+                    } else if (call.function.name === 'geocode_location') {
+                        const res = await geocodeLocation(args)
+                        output = JSON.stringify(res)
+                    } else if (call.function.name === 'get_weather_forecast') {
+                        const res = await getWeatherForecast(args)
                         output = JSON.stringify(res)
                     } else {
                         output = JSON.stringify({ error: "Unknown tool" })

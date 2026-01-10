@@ -2,7 +2,26 @@
 import 'dotenv/config'
 
 const BACKBOARD_API_URL = "https://app.backboard.io/api"
-const BACKBOARD_MODEL = "claude-3-7-sonnet-20250219"
+const PACKBOT_MODEL = "gpt-5"
+const SCOPE_GUARD_MODEL = "gpt-4.1-mini"
+
+async function createAssistant(apiKey: string, payload: any) {
+  const response = await fetch(`${BACKBOARD_API_URL}/assistants`, {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": apiKey
+    },
+    body: JSON.stringify(payload)
+  })
+
+  if (!response.ok) {
+    throw new Error(await response.text())
+  }
+
+  const data = await response.json()
+  return data.assistant_id as string
+}
 
 async function main() {
   const apiKey = process.env.BACKBOARD_API_KEY
@@ -11,19 +30,14 @@ async function main() {
     process.exit(1)
   }
 
-  console.log("🚀 Creating Gear Pack Assistant...")
+  console.log("🚀 Creating Gear Pack Assistants...")
 
-  const response = await fetch(`${BACKBOARD_API_URL}/assistants`, {
-    method: 'POST',
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": apiKey
-    },
-    body: JSON.stringify({
-      name: "PackBot",
-      model: BACKBOARD_MODEL,
-      description: "AI Hiking Guide for Gear Pack",
-      instructions: `You are PackBot, an expert hiking guide and logistics assistant.
+  // Main assistant: PackBot
+  const packBotId = await createAssistant(apiKey, {
+    name: "PackBot",
+    model: PACKBOT_MODEL,
+    description: "AI Hiking Guide for Gear Pack",
+    instructions: `You are PackBot, an expert hiking guide and logistics assistant.
 Your goal is to help users plan outdoor trips and pack the right gear.
 
 CAPABILITIES:
@@ -33,6 +47,8 @@ CAPABILITIES:
 4. Check User Profile & Preferences (get_user_profile tool).
 5. Add items to a trip (add_gear_to_trip tool).
 6. Save user preferences for next time (update_user_preferences tool).
+7. Convert a place name into coordinates (geocode_location tool).
+8. Get a real forecast from Open-Meteo (get_weather_forecast tool).
 
 RULES:
 - When asked for trail options, search the web and return 3-5 options. 
@@ -92,8 +108,12 @@ RULES:
 - **Date Smarts**: You will be provided with [Today's Date]. Use this to calculate specific dates for "next weekend", "this Friday", etc.
 - **Difficulty Inference**: If the user mentions a specific trail (e.g. "Algonquin"), SEARCH for its difficulty. Defaults to MODERATE if unsure.
 - **Coordinates & Weather**: You MUST search for the "latitude and longitude" of the trail head or mountain peak. These are REQUIRED for the weather widget to work. Do not leave them blank.
+- Prefer geocode_location to obtain latitude/longitude for named locations; use web search only when needed for trailhead specificity.
+- When making gear recommendations that depend on conditions, ALWAYS call get_weather_forecast (do not rely on web search for weather).
 - DO NOT auto-create a trip unless the user explicitly confirms a specific trail and date.
 - Always check the user's actual gear before recommending a packing list.
+- Scope: You are a hiking/outdoors/trips/gear assistant. Small talk is OK (be brief), but steer the conversation back to hiking/trips/gear.
+- Politely refuse and redirect for ANY request unrelated to hiking/outdoors/trips/gear.
 - Preferences are USER-focused and stable tendencies (not per-trip conditions). Use the stored preference profile to influence:
   1) gear lists
   2) trail/trek recommendations
@@ -265,23 +285,71 @@ Avoid nested formatting.
               required: ["tripId", "gearItems"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "geocode_location",
+            description: "Convert a location name into latitude/longitude candidates (Open-Meteo geocoding).",
+            parameters: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Place name, e.g. 'Mont-Tremblant, QC' or 'Yosemite Valley'" },
+                limit: { type: "number", description: "Max results (default 5)" }
+              },
+              required: ["name"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_weather_forecast",
+            description: "Get a real weather forecast from Open-Meteo. Uses hourly for DAY_HIKE and daily otherwise.",
+            parameters: {
+              type: "object",
+              properties: {
+                latitude: { type: "number" },
+                longitude: { type: "number" },
+                startDate: { type: "string", description: "ISO date or datetime" },
+                endDate: { type: "string", description: "ISO date or datetime" },
+                tripType: { type: "string", enum: ["DAY_HIKE", "OVERNIGHT", "MULTI_DAY", "THRU_HIKE", "OTHER"] }
+              },
+              required: ["latitude", "longitude", "startDate", "endDate"]
+            }
+          }
         }
       ]
-    })
   })
 
-  if (!response.ok) {
-    console.error("❌ Failed to create assistant:", await response.text())
-    process.exit(1)
-  }
+  // Scope classifier assistant: PackBotScopeGuard (no tools)
+  const scopeGuardId = await createAssistant(apiKey, {
+    name: "PackBotScopeGuard",
+    model: SCOPE_GUARD_MODEL,
+    description: "Classifies whether a message is in-scope for hiking/outdoors/trips/gear (small talk allowed).",
+    instructions: `You are PackBotScopeGuard.
 
-  const data = await response.json()
-  console.log("\n✅ Assistant Created Successfully!")
+Your ONLY job is to classify whether the user's message is in-scope for GearPack/PackBot.
+
+IN-SCOPE:
+- hiking, backpacking, camping, trails, mountains, trip planning/logistics, outdoor safety, navigation, packing/gear
+- brief small talk (greetings, thanks, short jokes) is OK
+
+OUT-OF-SCOPE:
+- anything unrelated to outdoors/trips/gear (examples: math homework, politics, relationship advice, programming help)
+
+When asked, return ONLY valid JSON (no markdown, no extra text):
+{"in_scope": true, "reason": "short reason"}`
+  })
+
+  console.log("\n✅ Assistants Created Successfully!")
   console.log("------------------------------------------------")
-  console.log(`ID: ${data.assistant_id}`)
+  console.log(`PackBot ID: ${packBotId}`)
+  console.log(`ScopeGuard ID: ${scopeGuardId}`)
   console.log("------------------------------------------------")
-  console.log("\n👉 Please add this to your .env file:")
-  console.log(`BACKBOARD_ASSISTANT_ID=${data.assistant_id}`)
+  console.log("\n👉 Please add these to your .env file:")
+  console.log(`BACKBOARD_ASSISTANT_ID=${packBotId}`)
+  console.log(`BACKBOARD_SCOPE_ASSISTANT_ID=${scopeGuardId}`)
 }
 
 main().catch(console.error)
