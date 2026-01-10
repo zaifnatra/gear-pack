@@ -171,7 +171,7 @@ export function normalizePreferenceStore(raw: unknown, timestamp = nowIso()): { 
                 new_value: c.new_value,
                 evidence: typeof c.evidence === "string" ? c.evidence : undefined,
                 timestamp: c.timestamp,
-            }))
+            } as PreferenceConflict))
             .filter((c): c is PreferenceConflict => {
                 return (
                     PREFERENCE_KEYS.includes(c.key as PreferenceKey) &&
