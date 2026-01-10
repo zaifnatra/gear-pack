@@ -259,7 +259,7 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
     const minTurnsBetweenQuestions = 10
     let preferenceQuestion: ReturnType<typeof buildSingleChoiceQuestion> | null = null
     const turnsSinceLastQuestion =
-        (prefStore.question_state.user_turn || 0) - (prefStore.question_state.last_question_turn || -9999)
+        (prefStore.question_state?.user_turn || 0) - (prefStore.question_state?.last_question_turn || -9999)
 
     if (
         turnsSinceLastQuestion >= minTurnsBetweenQuestions &&
@@ -267,7 +267,7 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
         isAdviceRequestThatDependsOnPreferences(userMessage)
     ) {
         const key = pickHighImpactMissingPreference(prefStore)
-        if (key) {
+        if (key && prefStore.question_state) {
             preferenceQuestion = buildSingleChoiceQuestion(key)
             prefStore.question_state.last_question_turn = prefStore.question_state.user_turn || 0
             prefStore.question_state.last_question_key = key
