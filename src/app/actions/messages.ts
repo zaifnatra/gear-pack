@@ -97,10 +97,18 @@ export async function sendMessage(conversationId: string, senderId: string, cont
             }
         })
 
-        // Update conversation timestamp
+        // Update conversation timestamp and unarchive for all participants
         await prisma.conversation.update({
             where: { id: conversationId },
-            data: { updatedAt: new Date() }
+            data: {
+                updatedAt: new Date(),
+                participants: {
+                    updateMany: {
+                        where: {},
+                        data: { isArchived: false }
+                    }
+                }
+            }
         })
 
         revalidatePath('/dashboard/messages')

@@ -11,9 +11,11 @@ export default function DashboardLayout({
 }>) {
     return (
         <>
-            <Suspense fallback={null}>
-                <AIChat />
-            </Suspense>
+            <div className="hidden md:block">
+                <Suspense fallback={null}>
+                    <AIChat />
+                </Suspense>
+            </div>
             <div className="relative flex min-h-screen flex-col bg-neutral-50/50 dark:bg-neutral-950 md:flex-row overflow-hidden font-sans">
                 {/* Background Auroras (Fixed) */}
                 <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">

@@ -44,13 +44,14 @@ export default function LoginPage() {
     return (
         <div className="w-full min-h-screen flex">
             {/* Left side - Hero section */}
-            <div className="hidden lg:flex flex-1 relative bg-neutral-900 items-center justify-center overflow-hidden">
+            {/* Left side - Hero section (Background on mobile, Split on desktop) */}
+            <div className="absolute inset-0 z-0 lg:static lg:flex lg:flex-1 bg-neutral-900 items-center justify-center overflow-hidden">
                 <img
                     src="/signinpicture.jpeg"
                     alt="Hiking Adventure"
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    className="absolute inset-0 w-full h-full object-cover opacity-40 lg:opacity-60"
                 />
-                <div className="relative z-10 text-white max-w-lg p-12">
+                <div className="relative z-10 text-white max-w-lg p-12 hidden lg:block">
                     <h1 className="text-6xl font-bold mb-8 leading-tight">
                         <Typewriter
                             text={["Gear up for your next adventure.", "Plan lighter, go further.", "Explore with confidence."]}
@@ -63,13 +64,16 @@ export default function LoginPage() {
             </div>
 
             {/* Right side - Login/Signup form */}
-            <div className="flex-1 bg-white flex items-center justify-center p-8 sm:p-12">
-                <div className="w-full max-w-md">
+            <div className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-12 lg:bg-white">
+                <div className="w-full max-w-md bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl lg:shadow-none lg:bg-transparent lg:p-0">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <Link href="/" className="inline-block mb-8 hover:scale-105 transition-transform duration-300">
-                            <img src="/logo-light.svg" alt="Gear-Pack" className="h-10 w-auto" />
+                            <img src="/logo-light.svg" alt="Gear-Pack" className="h-10 w-auto lg:hidden" /> {/* Separate logo for mobile if needed, or reuse */}
+                            {/* Note: logic for dark/light logo might need adjustment if bg is dark on mobile. using generic logo for now */}
+                            <img src="/logo-light.svg" alt="Gear-Pack" className="hidden lg:block h-10 w-auto" />
                         </Link>
+                        {/* Mobile logo logic: The logo-light.svg is likely dark text. On mobile card (white bg), it should work. */}
 
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">
                             {view === 'login' && 'Welcome back'}
@@ -109,7 +113,7 @@ export default function LoginPage() {
                                                 },
                                             })
                                         }}
-                                        className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+                                        className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all bg-white"
                                     >
                                         <svg className="h-5 w-5" viewBox="0 0 24 24">
                                             <path
@@ -137,7 +141,7 @@ export default function LoginPage() {
                                             <div className="w-full border-t border-gray-300" />
                                         </div>
                                         <div className="relative flex justify-center text-sm">
-                                            <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                                            <span className="bg-white px-2 text-gray-500 rounded-md">Or continue with</span>
                                         </div>
                                     </div>
                                 </>
@@ -153,7 +157,7 @@ export default function LoginPage() {
                                                 name="fullName"
                                                 type="text"
                                                 required
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-white"
                                                 placeholder="John Doe"
                                             />
                                         </div>
@@ -164,7 +168,7 @@ export default function LoginPage() {
                                                 name="username"
                                                 type="text"
                                                 required
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-white"
                                                 placeholder="johndoe123"
                                             />
                                         </div>
@@ -180,7 +184,7 @@ export default function LoginPage() {
                                         name={view === 'login' ? 'login' : 'email'}
                                         type={view === 'login' ? 'text' : 'email'}
                                         required
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-white"
                                         placeholder="you@example.com"
                                     />
                                 </div>
@@ -195,7 +199,7 @@ export default function LoginPage() {
                                                 type={showPassword ? "text" : "password"}
                                                 required
                                                 autoComplete={view === 'signup' ? 'new-password' : 'current-password'}
-                                                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-white"
                                                 placeholder={view === 'login' ? "Enter your password" : "Create a secure password"}
                                             />
                                             <button

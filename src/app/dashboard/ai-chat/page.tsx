@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation"
+import { AIChat } from "@/components/ai/AIChat"
 
 export default function AIChatPage() {
-    redirect("/dashboard")
+    return <AIChat mode="full" />
 }

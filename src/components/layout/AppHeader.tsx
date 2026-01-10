@@ -9,7 +9,13 @@ import { ThemeToggle } from './ThemeToggle'
 
 export async function AppHeader() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    let user = null
+    try {
+        const { data } = await supabase.auth.getUser()
+        user = data.user
+    } catch (error) {
+        // console.error("AppHeader auth error:", error)
+    }
 
     let userProfile = null
     if (user) {
