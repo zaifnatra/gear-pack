@@ -23,23 +23,30 @@ export default async function DashboardPage() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Welcome Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-neutral-900 p-8 text-white shadow-2xl shadow-emerald-900/20">
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                    <div className="absolute -top-[50%] -left-[10%] w-[70%] h-[70%] rounded-full bg-emerald-500/30 blur-[120px] animate-pulse-slow" />
-                    <div className="absolute top-[20%] -right-[10%] w-[60%] h-[60%] rounded-full bg-teal-500/20 blur-[120px] animate-pulse-slow delay-1000" />
+            {/* Welcome Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-neutral-900 p-8 sm:p-12 text-white shadow-2xl shadow-black/20 min-h-[300px] flex flex-col justify-end group">
+                {/* Background Image */}
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src="/header1.jpg"
+                        alt="Background"
+                        className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+                    />
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
                 </div>
 
-                <div className="relative z-10">
-                    <h1 className="text-3xl font-bold font-heading mb-2">Welcome back to Basecamp.</h1>
-                    <p className="text-neutral-300 max-w-xl">
+                <div className="relative z-10 max-w-2xl">
+                    <h1 className="text-4xl sm:text-5xl font-black font-heading mb-4 tracking-tight drop-shadow-sm">Welcome back to Basecamp.</h1>
+                    <p className="text-neutral-200 text-lg font-medium drop-shadow-sm mb-8 leading-relaxed">
                         Your gear is packed, your routes are planned. Check out what your friends are up to or start planning your next adventure.
                     </p>
 
-                    <div className="mt-8 flex gap-4">
-                        <Link href="/dashboard/trips" className="rounded-xl bg-white text-neutral-900 px-5 py-3 font-bold text-sm hover:bg-neutral-100 transition-colors">
+                    <div className="flex flex-wrap gap-4">
+                        <Link href="/dashboard/trips" className="rounded-full bg-white text-neutral-900 px-6 py-3.5 font-bold text-sm hover:bg-neutral-100 hover:scale-105 transition-all shadow-lg shadow-black/20">
                             Plan a Trip
                         </Link>
-                        <Link href="/dashboard/gear" className="rounded-xl bg-white/10 text-white px-5 py-3 font-bold text-sm hover:bg-white/20 transition-colors backdrop-blur-md">
+                        <Link href="/dashboard/gear" className="rounded-full bg-white/10 text-white px-6 py-3.5 font-bold text-sm hover:bg-white/20 hover:scale-105 transition-all backdrop-blur-md border border-white/10">
                             Manage Gear
                         </Link>
                     </div>

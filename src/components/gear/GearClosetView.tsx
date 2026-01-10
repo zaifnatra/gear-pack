@@ -34,20 +34,35 @@ export function GearClosetView({ initialItems, userId }: GearClosetViewProps) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">Gear Closet</h1>
-                    <p className="text-neutral-500">Manage your inventory and pack weights.</p>
+            {/* Header Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-neutral-900 p-8 sm:p-12 text-white shadow-2xl shadow-black/20 min-h-[250px] flex flex-col justify-end group">
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src="/header4.jpg"
+                        alt="Gear Background"
+                        className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
                 </div>
-                <button
-                    onClick={() => handleEdit(null)}
-                    className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                    </svg>
-                    Add Item
-                </button>
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <h1 className="text-4xl font-black font-heading tracking-tight drop-shadow-sm mb-2">Gear Closet</h1>
+                        <p className="text-neutral-200 text-lg font-medium drop-shadow-sm max-w-xl">
+                            Inventory your equipment, track weights, and organize your pack.
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={() => handleEdit(null)}
+                        className="inline-flex items-center justify-center rounded-full bg-white text-neutral-900 px-6 py-3 font-bold text-sm hover:bg-neutral-100 hover:scale-105 transition-all shadow-lg shadow-black/20"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        Add Item
+                    </button>
+                </div>
             </div>
 
             <GearGrid items={initialItems} onEdit={handleEdit} showWeight={false} />

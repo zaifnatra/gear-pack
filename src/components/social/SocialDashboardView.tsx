@@ -20,10 +20,22 @@ export function SocialDashboardView({ friends, requests, sentRequests, userId }:
     return (
         <div className="space-y-6">
             {/* ... Header ... */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">Social Hub</h1>
-                    <p className="text-neutral-500">Connect with other hikers.</p>
+            {/* Header Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-neutral-900 p-8 sm:p-12 text-white shadow-2xl shadow-black/20 min-h-[200px] flex flex-col justify-end group">
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src="/header3.jpg"
+                        alt="Social Background"
+                        className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+                </div>
+
+                <div className="relative z-10">
+                    <h1 className="text-4xl font-black font-heading tracking-tight drop-shadow-sm mb-2">Social Hub</h1>
+                    <p className="text-neutral-200 text-lg font-medium drop-shadow-sm max-w-xl">
+                        Connect with other hikers, share gear lists, and coordinate group trips.
+                    </p>
                 </div>
             </div>
 
