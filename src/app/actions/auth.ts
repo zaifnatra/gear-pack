@@ -135,7 +135,7 @@ export async function signUp(formData: FormData) {
                     email: email,
                     fullName: fullName,
                     username: username,
-                    preferences: createDefaultPreferenceStore(),
+                    preferences: createDefaultPreferenceStore() as any,
                 }
             })
             return { success: true, checkEmail: true }
@@ -154,7 +154,7 @@ export async function signUp(formData: FormData) {
                     email: email,
                     fullName: fullName,
                     username: username,
-                    preferences: createDefaultPreferenceStore(),
+                    preferences: createDefaultPreferenceStore() as any,
                 }
             })
         } catch (dbError) {
