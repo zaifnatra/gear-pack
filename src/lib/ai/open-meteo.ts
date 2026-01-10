@@ -1,13 +1,6 @@
-export type ForecastMode = "hourly" | "daily"
 
-export interface GeocodeResult {
-    name: string
-    latitude: number
-    longitude: number
-    country?: string
-    admin1?: string
-    timezone?: string
-}
+
+export type ForecastMode = "hourly" | "daily"
 
 export interface WeatherForecastResult {
     mode: ForecastMode
@@ -53,6 +46,15 @@ function normalizeDateInput(value: string) {
     return toIsoDate(asDate)
 }
 
+export interface GeocodeResult {
+    name: string
+    latitude: number
+    longitude: number
+    country?: string
+    admin1?: string
+    timezone?: string
+}
+
 export async function geocodeLocationName(name: string, limit = 5): Promise<GeocodeResult[]> {
     const trimmed = name.trim()
     if (!trimmed) return []
@@ -72,7 +74,7 @@ export async function geocodeLocationName(name: string, limit = 5): Promise<Geoc
     const data = await res.json()
     const results = Array.isArray(data?.results) ? data.results : []
     return results
-        .filter((r: any) => isFiniteNumber(r.latitude) && isFiniteNumber(r.longitude) && typeof r.name === "string")
+        .filter((r: unknown) => isFiniteNumber((r as any).latitude) && isFiniteNumber((r as any).longitude) && typeof (r as any).name === "string")
         .map((r: any) => ({
             name: r.name,
             latitude: r.latitude,

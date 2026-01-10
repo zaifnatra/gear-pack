@@ -12,7 +12,6 @@ import {
 import {
     addGearToTrip,
     createTrip,
-    geocodeLocation,
     getUserGear,
     getUserProfile,
     getWeatherForecast,
@@ -142,25 +141,31 @@ function isClearlyOutOfScope(message: string) {
     return isMath || isPolitics || isDating
 }
 
-async function classifyScopeWithBackboard(userMessage: string) {
+async function classifyScopeWithBackboard(userMessage: string, lastAssistantMessage?: string) {
     const scopeAssistantId = process.env.BACKBOARD_SCOPE_ASSISTANT_ID
     if (!scopeAssistantId) return null
 
     const threadId = await createThread(scopeAssistantId)
     if (!threadId) return null
 
+    const contextBlock = lastAssistantMessage
+        ? `\nPREVIOUS ASSISTANT MESSAGE:\n"""${lastAssistantMessage.slice(0, 200).replaceAll('"""', '"')}..."""\n`
+        : ""
+
     const prompt = `Decide whether the user's message is in-scope for GearPack/PackBot.
 
 IN-SCOPE:
 - hiking, backpacking, camping, trails, mountains, trip planning/logistics, outdoor safety, navigation, packing/gear
 - brief small talk (greetings, thanks, short jokes) is OK
+- simple affirmations/negations or responses to questions (e.g. "yes", "sure", "no", "go ahead", "sounds good")
 
 OUT-OF-SCOPE:
 - anything unrelated to outdoors/trips/gear (e.g. math homework, politics, dating advice)
 
-Return ONLY valid JSON (no markdown) with this shape:
+When asked, return ONLY valid JSON (no markdown) with this shape:
 {"in_scope": true, "reason": "short reason"}
 
+${contextBlock}
 User message:
 """${userMessage.replaceAll('"""', '"')}"""`
 
@@ -233,12 +238,16 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
 
     // Only hard-block obviously off-topic categories. Everything else (including small talk) goes to the assistant.
     // If BACKBOARD_SCOPE_ASSISTANT_ID is configured, use it to AI-classify scope.
+    // We fetch the PREVIOUS message from the main thread to give context to the scope guard.
     if (!isPreferenceAnswer && isClearlyOutOfScope(userMessage)) {
         return buildOutOfScopeResponse()
     }
 
     if (!isPreferenceAnswer) {
-        const scope = await classifyScopeWithBackboard(userMessage)
+        // Fetch last assistant message for context
+        const lastAssistantMessage = await getLatestResponse(threadId)
+
+        const scope = await classifyScopeWithBackboard(userMessage, lastAssistantMessage)
         if (scope && scope.inScope === false) return buildOutOfScopeResponse()
     }
 
@@ -387,9 +396,7 @@ async function pollRun(threadId: string, initialRun: any, userId: string) {
                     } else if (call.function.name === 'add_gear_to_trip') {
                         const res = await addGearToTrip(args)
                         output = JSON.stringify(res)
-                    } else if (call.function.name === 'geocode_location') {
-                        const res = await geocodeLocation(args)
-                        output = JSON.stringify(res)
+
                     } else if (call.function.name === 'get_weather_forecast') {
                         const res = await getWeatherForecast(args)
                         output = JSON.stringify(res)

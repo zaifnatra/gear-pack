@@ -5,7 +5,7 @@ import {
     normalizePreferenceStore
 } from "@/lib/ai/preferences"
 import type { PreferenceKey, PreferenceUpdate } from "@/lib/ai/preferences"
-import { fetchWeatherForecast, geocodeLocationName } from "@/lib/ai/open-meteo"
+import { fetchWeatherForecast } from "@/lib/ai/open-meteo"
 
 // Tool 1: Create Trip
 interface CreateTripParams {
@@ -207,16 +207,7 @@ export async function updateUserPreferences(
     }
 }
 
-// Tool 6: Geocode Location Name (Open-Meteo Geocoding)
-export async function geocodeLocation(params: { name: string; limit?: number }) {
-    try {
-        const results = await geocodeLocationName(params.name, params.limit ?? 5)
-        return { success: true, results }
-    } catch (e: any) {
-        console.error("Tool Error: geocodeLocation", e)
-        return { success: false, error: e?.message || "Failed to geocode location." }
-    }
-}
+
 
 type TripKindForForecast = "DAY_HIKE" | "OVERNIGHT" | "MULTI_DAY" | "THRU_HIKE" | "OTHER"
 
