@@ -152,7 +152,7 @@ export async function getUserProfile(userId: string) {
         if (changed) {
             await prisma.user.update({
                 where: { id: userId },
-                data: { preferences: store }
+                data: { preferences: store as any }
             })
         }
 
@@ -191,7 +191,7 @@ export async function updateUserPreferences(
 
         await prisma.user.update({
             where: { id: userId },
-            data: { preferences: nextStore }
+            data: { preferences: nextStore as any }
         })
 
         return {
