@@ -2,7 +2,26 @@
 import 'dotenv/config'
 
 const BACKBOARD_API_URL = "https://app.backboard.io/api"
-const BACKBOARD_MODEL = "claude-3-7-sonnet-20250219"
+const PACKBOT_MODEL = "gpt-5"
+const SCOPE_GUARD_MODEL = "gpt-4.1-mini"
+
+async function createAssistant(apiKey: string, payload: any) {
+  const response = await fetch(`${BACKBOARD_API_URL}/assistants`, {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": apiKey
+    },
+    body: JSON.stringify(payload)
+  })
+
+  if (!response.ok) {
+    throw new Error(await response.text())
+  }
+
+  const data = await response.json()
+  return data.assistant_id as string
+}
 
 async function main() {
   const apiKey = process.env.BACKBOARD_API_KEY
@@ -11,19 +30,14 @@ async function main() {
     process.exit(1)
   }
 
-  console.log("🚀 Creating Gear Pack Assistant...")
+  console.log("🚀 Creating Gear Pack Assistants...")
 
-  const response = await fetch(`${BACKBOARD_API_URL}/assistants`, {
-    method: 'POST',
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": apiKey
-    },
-    body: JSON.stringify({
-      name: "PackBot",
-      model: BACKBOARD_MODEL,
-      description: "AI Hiking Guide for Gear Pack",
-      instructions: `You are PackBot, an expert hiking guide and logistics assistant.
+  // Main assistant: PackBot
+  const packBotId = await createAssistant(apiKey, {
+    name: "PackBot",
+    model: PACKBOT_MODEL,
+    description: "AI Hiking Guide for Gear Pack",
+    instructions: `You are PackBot, an expert hiking guide and logistics assistant.
 Your goal is to help users plan outdoor trips and pack the right gear.
 
 CAPABILITIES:
@@ -98,7 +112,8 @@ RULES:
 - When making gear recommendations that depend on conditions, ALWAYS call get_weather_forecast (do not rely on web search for weather).
 - DO NOT auto-create a trip unless the user explicitly confirms a specific trail and date.
 - Always check the user's actual gear before recommending a packing list.
-- Scope: If the user asks something unrelated to hiking/outdoors/trips/gear, politely refuse and redirect them back to hiking/trip/gear help. Do NOT answer math homework, dating advice, or general chit-chat.
+- Scope: You are a hiking/outdoors/trips/gear assistant. Small talk is OK (be brief), but steer the conversation back to hiking/trips/gear.
+- Politely refuse and redirect for ANY request unrelated to hiking/outdoors/trips/gear.
 - Preferences are USER-focused and stable tendencies (not per-trip conditions). Use the stored preference profile to influence:
   1) gear lists
   2) trail/trek recommendations
@@ -305,21 +320,36 @@ Avoid nested formatting.
           }
         }
       ]
-    })
   })
 
-  if (!response.ok) {
-    console.error("❌ Failed to create assistant:", await response.text())
-    process.exit(1)
-  }
+  // Scope classifier assistant: PackBotScopeGuard (no tools)
+  const scopeGuardId = await createAssistant(apiKey, {
+    name: "PackBotScopeGuard",
+    model: SCOPE_GUARD_MODEL,
+    description: "Classifies whether a message is in-scope for hiking/outdoors/trips/gear (small talk allowed).",
+    instructions: `You are PackBotScopeGuard.
 
-  const data = await response.json()
-  console.log("\n✅ Assistant Created Successfully!")
+Your ONLY job is to classify whether the user's message is in-scope for GearPack/PackBot.
+
+IN-SCOPE:
+- hiking, backpacking, camping, trails, mountains, trip planning/logistics, outdoor safety, navigation, packing/gear
+- brief small talk (greetings, thanks, short jokes) is OK
+
+OUT-OF-SCOPE:
+- anything unrelated to outdoors/trips/gear (examples: math homework, politics, relationship advice, programming help)
+
+When asked, return ONLY valid JSON (no markdown, no extra text):
+{"in_scope": true, "reason": "short reason"}`
+  })
+
+  console.log("\n✅ Assistants Created Successfully!")
   console.log("------------------------------------------------")
-  console.log(`ID: ${data.assistant_id}`)
+  console.log(`PackBot ID: ${packBotId}`)
+  console.log(`ScopeGuard ID: ${scopeGuardId}`)
   console.log("------------------------------------------------")
-  console.log("\n👉 Please add this to your .env file:")
-  console.log(`BACKBOARD_ASSISTANT_ID=${data.assistant_id}`)
+  console.log("\n👉 Please add these to your .env file:")
+  console.log(`BACKBOARD_ASSISTANT_ID=${packBotId}`)
+  console.log(`BACKBOARD_SCOPE_ASSISTANT_ID=${scopeGuardId}`)
 }
 
 main().catch(console.error)
