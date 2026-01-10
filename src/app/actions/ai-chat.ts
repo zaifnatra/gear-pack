@@ -11,7 +11,7 @@ import {
     getLatestResponse,
     getThreadHistory
 } from '@/lib/backboard'
-import { createTrip, getUserGear, addGearToTrip, getUserProfile } from '@/lib/ai/tools'
+import { createTrip, getUserGear, addGearToTrip, getUserProfile, updateUserPreferences } from '@/lib/ai/tools'
 
 export async function getChatHistory(): Promise<ChatResponse[]> {
     const supabase = await createClient()
@@ -157,7 +157,11 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
 
     // 2. Add Message and Trigger Run
     const today = new Date().toDateString()
-    const contextMessage = `[Current Context: Today is ${today}. User Location: ${dbUser?.location || "Unknown"}] ${userMessage}`
+    const userPreferences =
+        (dbUser as any)?.preferences && typeof (dbUser as any).preferences === 'object'
+            ? JSON.stringify((dbUser as any).preferences)
+            : "Unknown"
+    const contextMessage = `[Current Context: Today is ${today}. User Location: ${dbUser?.location || "Unknown"}. User Preferences: ${userPreferences}] ${userMessage}`
 
     const run = await addMessage(threadId, 'user', contextMessage)
 
@@ -259,6 +263,9 @@ async function pollRun(threadId: string, initialRun: any, userId: string) {
                         }
                     } else if (call.function.name === 'get_user_profile') {
                         const res = await getUserProfile(userId)
+                        output = JSON.stringify(res)
+                    } else if (call.function.name === 'update_user_preferences') {
+                        const res = await updateUserPreferences(userId, args)
                         output = JSON.stringify(res)
                     } else if (call.function.name === 'add_gear_to_trip') {
                         const res = await addGearToTrip(args)
