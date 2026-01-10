@@ -11,7 +11,15 @@ import {
     getLatestResponse,
     getThreadHistory
 } from '@/lib/backboard'
-import { createTrip, getUserGear, addGearToTrip, getUserProfile, updateUserPreferences } from '@/lib/ai/tools'
+import {
+    addGearToTrip,
+    createTrip,
+    geocodeLocation,
+    getUserGear,
+    getUserProfile,
+    getWeatherForecast,
+    updateUserPreferences
+} from '@/lib/ai/tools'
 import {
     applyPreferenceUpdates,
     buildSingleChoiceQuestion,
@@ -140,12 +148,35 @@ export interface ChatResponse {
     role?: string
 }
 
+function buildOutOfScopeResponse(): ChatResponse {
+    return {
+        role: 'assistant',
+        isJSON: false,
+        message:
+            "I’m PackBot — I can only help with hiking/trail planning, trip logistics, and gear packing. Ask me about a hike you want to do, your trip dates/location, or what gear you have.",
+        quickActions: [
+            { label: "Find a hike nearby", value: "Find a hike nearby" },
+            { label: "Plan a weekend trip", value: "Plan a weekend trip" },
+            { label: "Analyze my gear closet", value: "Analyze my gear closet" }
+        ]
+    }
+}
+
+function isInScopeMessage(message: string) {
+    // Allow only outdoor/trip/gear related requests. Everything else gets a gentle refusal.
+    return isGearTripTrailTopic(message)
+}
+
 export async function sendAIMessage(userMessage: string): Promise<ChatResponse> {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
         throw new Error("Unauthorized")
+    }
+
+    if (!isInScopeMessage(userMessage)) {
+        return buildOutOfScopeResponse()
     }
 
     // 1. Get or Create Thread
@@ -325,6 +356,12 @@ async function pollRun(threadId: string, initialRun: any, userId: string) {
                         output = JSON.stringify(res)
                     } else if (call.function.name === 'add_gear_to_trip') {
                         const res = await addGearToTrip(args)
+                        output = JSON.stringify(res)
+                    } else if (call.function.name === 'geocode_location') {
+                        const res = await geocodeLocation(args)
+                        output = JSON.stringify(res)
+                    } else if (call.function.name === 'get_weather_forecast') {
+                        const res = await getWeatherForecast(args)
                         output = JSON.stringify(res)
                     } else {
                         output = JSON.stringify({ error: "Unknown tool" })

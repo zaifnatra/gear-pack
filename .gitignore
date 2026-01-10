@@ -46,5 +46,6 @@ next-env.d.ts
 
 #read files
 BEGINNER_GUIDE.md
+CODE_EXPLANATION.md
 CODE_PATTERNS.md
 PROJECT_GUIDE.md

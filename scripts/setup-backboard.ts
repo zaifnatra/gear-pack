@@ -33,6 +33,8 @@ CAPABILITIES:
 4. Check User Profile & Preferences (get_user_profile tool).
 5. Add items to a trip (add_gear_to_trip tool).
 6. Save user preferences for next time (update_user_preferences tool).
+7. Convert a place name into coordinates (geocode_location tool).
+8. Get a real forecast from Open-Meteo (get_weather_forecast tool).
 
 RULES:
 - When asked for trail options, search the web and return 3-5 options. 
@@ -92,8 +94,11 @@ RULES:
 - **Date Smarts**: You will be provided with [Today's Date]. Use this to calculate specific dates for "next weekend", "this Friday", etc.
 - **Difficulty Inference**: If the user mentions a specific trail (e.g. "Algonquin"), SEARCH for its difficulty. Defaults to MODERATE if unsure.
 - **Coordinates & Weather**: You MUST search for the "latitude and longitude" of the trail head or mountain peak. These are REQUIRED for the weather widget to work. Do not leave them blank.
+- Prefer geocode_location to obtain latitude/longitude for named locations; use web search only when needed for trailhead specificity.
+- When making gear recommendations that depend on conditions, ALWAYS call get_weather_forecast (do not rely on web search for weather).
 - DO NOT auto-create a trip unless the user explicitly confirms a specific trail and date.
 - Always check the user's actual gear before recommending a packing list.
+- Scope: If the user asks something unrelated to hiking/outdoors/trips/gear, politely refuse and redirect them back to hiking/trip/gear help. Do NOT answer math homework, dating advice, or general chit-chat.
 - Preferences are USER-focused and stable tendencies (not per-trip conditions). Use the stored preference profile to influence:
   1) gear lists
   2) trail/trek recommendations
@@ -263,6 +268,39 @@ Avoid nested formatting.
                 }
               },
               required: ["tripId", "gearItems"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "geocode_location",
+            description: "Convert a location name into latitude/longitude candidates (Open-Meteo geocoding).",
+            parameters: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Place name, e.g. 'Mont-Tremblant, QC' or 'Yosemite Valley'" },
+                limit: { type: "number", description: "Max results (default 5)" }
+              },
+              required: ["name"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "get_weather_forecast",
+            description: "Get a real weather forecast from Open-Meteo. Uses hourly for DAY_HIKE and daily otherwise.",
+            parameters: {
+              type: "object",
+              properties: {
+                latitude: { type: "number" },
+                longitude: { type: "number" },
+                startDate: { type: "string", description: "ISO date or datetime" },
+                endDate: { type: "string", description: "ISO date or datetime" },
+                tripType: { type: "string", enum: ["DAY_HIKE", "OVERNIGHT", "MULTI_DAY", "THRU_HIKE", "OTHER"] }
+              },
+              required: ["latitude", "longitude", "startDate", "endDate"]
             }
           }
         }
