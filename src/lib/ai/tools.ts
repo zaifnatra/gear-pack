@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma"
 import { TripType, Difficulty } from "@prisma/client"
-
-type SleepTempPreference = "WARM" | "COLD"
-type PackStylePreference = "ULTRALIGHT" | "COMFORT"
-type ExperiencePreference = "BEGINNER" | "INTERMEDIATE" | "EXPERT"
+import {
+    applyPreferenceUpdates,
+    normalizePreferenceStore
+} from "@/lib/ai/preferences"
+import type { PreferenceKey, PreferenceUpdate } from "@/lib/ai/preferences"
 
 // Tool 1: Create Trip
 interface CreateTripParams {
@@ -146,11 +147,19 @@ export async function getUserProfile(userId: string) {
 
         if (!user) return null
 
-        // Format for AI
+        const { store, changed } = normalizePreferenceStore(user.preferences)
+        if (changed) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: { preferences: store }
+            })
+        }
+
+        // Format for AI (stable preferences only)
         return {
             name: user.fullName || "User",
             location: user.location || "Unknown",
-            preferences: user.preferences || "Unknown (Ask the user for their sleeping temperature (Warm/Cold) and packing style (Ultralight/Comfort))"
+            preferences: store.profile
         }
     } catch (e) {
         console.error("Error fetching user profile:", e)
@@ -158,70 +167,38 @@ export async function getUserProfile(userId: string) {
     }
 }
 
-interface UpdateUserPreferencesParams {
-    sleepTemp?: SleepTempPreference | string
-    packStyle?: PackStylePreference | string
-    experience?: ExperiencePreference | string
-}
-
-function normalizePreference(
-    value: unknown,
-    allowed: readonly string[],
-    aliases: Record<string, string> = {}
-): string | undefined {
-    if (typeof value !== "string") return undefined
-    const raw = value.trim()
-    if (!raw) return undefined
-
-    const upper = raw.toUpperCase()
-    const aliased = aliases[upper] || upper
-    return allowed.includes(aliased) ? aliased : undefined
-}
-
 /**
  * Tool 5: Update User Preferences (stored in User.preferences JSON)
- * This lets the assistant persist user preferences across conversations.
+ *
+ * Supports confidence + conflict logging:
+ * - If existing confidence is "confirmed" and a different value arrives, it is NOT overwritten.
+ * - A conflict record is appended instead.
  */
-export async function updateUserPreferences(userId: string, params: UpdateUserPreferencesParams) {
+export async function updateUserPreferences(
+    userId: string,
+    params: { updates: Array<{ key: PreferenceKey; value: string; confidence: "default" | "inferred" | "confirmed"; evidence?: string }> }
+) {
     try {
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { preferences: true }
         })
 
-        const existingPreferences = user?.preferences
-        const current =
-            existingPreferences && typeof existingPreferences === "object" && !Array.isArray(existingPreferences)
-                ? (existingPreferences as Record<string, unknown>)
-                : {}
-
-        const next: Record<string, unknown> = { ...current }
-
-        const sleepTemp = normalizePreference(params.sleepTemp, ["WARM", "COLD"])
-        if (sleepTemp) next.sleepTemp = sleepTemp
-
-        const packStyle = normalizePreference(params.packStyle, ["ULTRALIGHT", "COMFORT"], {
-            UL: "ULTRALIGHT",
-            LIGHT: "ULTRALIGHT",
-            LIGHTWEIGHT: "ULTRALIGHT",
-            COMFY: "COMFORT"
-        })
-        if (packStyle) next.packStyle = packStyle
-
-        const experience = normalizePreference(params.experience, ["BEGINNER", "INTERMEDIATE", "EXPERT"], {
-            ADVANCED: "EXPERT"
-        })
-        if (experience) next.experience = experience
+        const { store } = normalizePreferenceStore(user?.preferences)
+        const updates: PreferenceUpdate[] = Array.isArray(params?.updates) ? params.updates : []
+        const { store: nextStore, applied, conflictsAdded } = applyPreferenceUpdates(store, updates)
 
         await prisma.user.update({
             where: { id: userId },
-            data: { preferences: next }
+            data: { preferences: nextStore }
         })
 
         return {
             success: true,
-            preferences: next,
-            message: "Saved your preferences for next time."
+            applied,
+            conflictsAdded,
+            preferences: nextStore.profile,
+            message: applied.length > 0 ? "Saved your preferences for next time." : "No changes were made."
         }
     } catch (e) {
         console.error("Tool Error: updateUserPreferences", e)

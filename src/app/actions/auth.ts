@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { createDefaultPreferenceStore } from '@/lib/ai/preferences'
 
 export async function signIn(formData: FormData) {
     let login = formData.get('login') as string // Can be email or username
@@ -134,6 +135,7 @@ export async function signUp(formData: FormData) {
                     email: email,
                     fullName: fullName,
                     username: username,
+                    preferences: createDefaultPreferenceStore(),
                 }
             })
             return { success: true, checkEmail: true }
@@ -152,6 +154,7 @@ export async function signUp(formData: FormData) {
                     email: email,
                     fullName: fullName,
                     username: username,
+                    preferences: createDefaultPreferenceStore(),
                 }
             })
         } catch (dbError) {

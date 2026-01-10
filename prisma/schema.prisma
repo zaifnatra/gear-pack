@@ -29,7 +29,7 @@ model User {
 
   // AI Memory
   backboardThreadId String?
-  preferences       Json?     // Stores: { sleepTemp: 'WARM'|'COLD', packStyle: 'ULTRALIGHT'|'COMFORT', experience: 'BEGINNER'|'EXPERT' }
+  preferences       Json?     // Stores: { profile: { pack_style: { value, confidence, updated_at, evidence? }, ... }, conflicts: [...], question_state: {...} }
   
   // Timestamps
   createdAt DateTime @default(now())
