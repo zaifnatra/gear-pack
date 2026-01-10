@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { signOut } from '@/app/actions/auth'
-import { useTheme } from 'next-themes'
+
 
 import Image from 'next/image'
 
@@ -18,7 +18,6 @@ interface ProfileDropdownProps {
 export function ProfileDropdown({ user }: ProfileDropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [isPending, startTransition] = useTransition()
-    const { theme, setTheme } = useTheme()
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     // Close on click outside
@@ -80,15 +79,7 @@ export function ProfileDropdown({ user }: ProfileDropdownProps) {
                     >
                         Settings
                     </Link>
-                    <button
-                        onClick={() => {
-                            setTheme(theme === 'dark' ? 'light' : 'dark')
-                            setIsOpen(false)
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                    >
-                        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                    </button>
+
                     <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />
                     <button
                         onClick={handleSignOut}

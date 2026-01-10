@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { deleteTrip } from '@/app/actions/trips'
 import { TripChatButton } from './TripChatButton'
 import { Modal } from '@/components/ui/Modal'
+import { InviteFriendModal } from './InviteFriendModal'
 
 interface TripActionsProps {
     tripId: string
@@ -18,12 +19,10 @@ export function TripActions({ tripId, currentUserId, organizerId }: TripActionsP
     const isOrganizer = currentUserId === organizerId
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [showInviteModal, setShowInviteModal] = useState(false)
 
     const confirmDelete = () => {
-        setShowDeleteModal(false) // Close immediately to show pending state on button if needed, but here we can keep open or close. 
-        // Better to close, or handle loading state inside modal? 
-        // Let's close it and let the main UI show "Deleting..." if we desire, OR keep it open with loading state.
-        // The original code used router.refresh(), so let's stick to the transition logic.
+        setShowDeleteModal(false)
 
         startTransition(async () => {
             const res = await deleteTrip(tripId, currentUserId)
@@ -38,7 +37,10 @@ export function TripActions({ tripId, currentUserId, organizerId }: TripActionsP
 
     return (
         <div className="flex flex-col gap-2">
-            <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+            <button
+                onClick={() => setShowInviteModal(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg>
                 Invite Friends
             </button>
@@ -83,6 +85,13 @@ export function TripActions({ tripId, currentUserId, organizerId }: TripActionsP
                     </Modal>
                 </>
             )}
+
+            <InviteFriendModal
+                isOpen={showInviteModal}
+                onClose={() => setShowInviteModal(false)}
+                tripId={tripId}
+                currentUserId={currentUserId}
+            />
         </div>
     )
 }

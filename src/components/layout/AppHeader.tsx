@@ -5,17 +5,11 @@ import { ProfileDropdown } from './ProfileDropdown'
 import { NotificationDropdown } from './NotificationDropdown'
 import { UnreadMessageBadge } from './UnreadMessageBadge'
 import { GlobalSearchTrigger } from './GlobalSearchTrigger'
-import { ThemeToggle } from './ThemeToggle'
+
 
 export async function AppHeader() {
     const supabase = await createClient()
-    let user = null
-    try {
-        const { data } = await supabase.auth.getUser()
-        user = data.user
-    } catch (error) {
-        // console.error("AppHeader auth error:", error)
-    }
+    const { data: { user } } = await supabase.auth.getUser()
 
     let userProfile = null
     if (user) {
@@ -43,7 +37,7 @@ export async function AppHeader() {
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2 md:gap-4">
-                    <ThemeToggle />
+
                     {userProfile && <NotificationDropdown userId={userProfile.id} />}
 
                     {userProfile && <UnreadMessageBadge userId={userProfile.id} />}

@@ -278,6 +278,8 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                             {conversations.map(conv => {
                                 const meta = getConversationMeta(conv)
                                 const lastMsg = conv.messages?.[0]
+                                const myParticipant = conv.participants.find((p: any) => p.userId === currentUserId)
+                                const isUnread = lastMsg && myParticipant && (!myParticipant.lastReadAt || new Date(lastMsg.createdAt) > new Date(myParticipant.lastReadAt))
                                 return (
                                     <div
                                         key={conv.id}
@@ -297,26 +299,32 @@ export function ChatInterface({ currentUserId }: ChatInterfaceProps) {
                                             <X className="h-4 w-4" />
                                         </button>
 
-                                        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-neutral-200 border border-neutral-200 dark:border-neutral-700">
-                                            {meta.avatar ? (
-                                                <img src={meta.avatar} className="h-full w-full object-cover" />
-                                            ) : (
-                                                <div className="flex h-full w-full items-center justify-center bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30">
-                                                    {meta.isGroup ? (
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                                                    ) : (
-                                                        <span className="text-sm font-bold">{meta.name.substring(0, 2).toUpperCase()}</span>
-                                                    )}
-                                                </div>
-                                            )}
+                                        <div className="relative h-10 w-10 flex-shrink-0">
+                                            <div className="h-10 w-10 overflow-hidden rounded-full bg-neutral-200 border border-neutral-200 dark:border-neutral-700">
+                                                {meta.avatar ? (
+                                                    <img src={meta.avatar} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30">
+                                                        {meta.isGroup ? (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                                        ) : (
+                                                            <span className="text-sm font-bold">{meta.name.substring(0, 2).toUpperCase()}</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
+
                                         <div className="flex flex-1 flex-col items-start min-w-0">
                                             <div className="flex w-full items-center justify-between">
-                                                <span className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100 font-heading">{meta.name}</span>
+                                                <span className={`truncate text-sm ${isUnread ? 'font-bold text-neutral-900 dark:text-white' : 'font-bold text-neutral-900 dark:text-neutral-100'} font-heading`}>{meta.name}</span>
+                                                {isUnread && (
+                                                    <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                                                )}
                                             </div>
-                                            <span className="truncate text-xs text-neutral-500 w-full text-left">
+                                            <span className={`truncate text-xs w-full text-left ${isUnread ? 'font-semibold text-neutral-900 dark:text-white' : 'text-neutral-500'}`}>
                                                 {lastMsg ? (
-                                                    <span className={lastMsg.senderId === currentUserId ? 'text-neutral-400' : 'text-neutral-600 dark:text-neutral-300'}>
+                                                    <span className={lastMsg.senderId === currentUserId ? 'text-neutral-400' : ''}>
                                                         {lastMsg.senderId === currentUserId && 'You: '}{lastMsg.content}
                                                     </span>
                                                 ) : 'No messages'}

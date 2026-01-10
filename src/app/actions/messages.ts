@@ -97,17 +97,23 @@ export async function sendMessage(conversationId: string, senderId: string, cont
             }
         })
 
-        // Update conversation timestamp and unarchive for all participants
+        // Update conversation timestamp
         await prisma.conversation.update({
             where: { id: conversationId },
-            data: {
-                updatedAt: new Date(),
-                participants: {
-                    updateMany: {
-                        where: {},
-                        data: { isArchived: false }
-                    }
+            data: { updatedAt: new Date() }
+        })
+
+        // Update sender's lastReadAt so they don't see their own message as unread
+        await prisma.conversationParticipant.update({
+            where: {
+                userId_conversationId: {
+                    userId: senderId,
+                    conversationId
                 }
+            },
+            data: {
+                lastReadAt: new Date(),
+                isArchived: false // Also unarchive if it was archived
             }
         })
 

@@ -27,21 +27,7 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // refresh session if expired - required for Server Components
-    // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
-    let user = null
-    try {
-        const { data: { user: supabaseUser }, error } = await supabase.auth.getUser()
-        if (error) {
-            // console.error("Middleware auth error:", error) 
-            // If there's an error (like invalid refresh token), user remains null
-        } else {
-            user = supabaseUser
-        }
-    } catch (e) {
-        // Catch any unexpected errors to prevent crashing
-        // console.error("Middleware auth exception:", e)
-    }
+    const { data: { user } } = await supabase.auth.getUser()
 
     // Protect dashboard routes
     if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {

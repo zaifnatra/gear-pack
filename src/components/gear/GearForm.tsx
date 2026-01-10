@@ -164,6 +164,7 @@ export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
                     <label className="text-sm font-medium">Weight (g)</label>
                     <input
                         type="number"
+                        min="0"
                         value={weight}
                         onChange={(e) => setWeight(e.target.value)}
                         className="flex h-10 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700 dark:bg-neutral-900"

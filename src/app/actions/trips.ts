@@ -51,15 +51,28 @@ export async function createTrip(userId: string, data: {
     }
 }
 
-export async function inviteUserToTrip(tripId: string, friendId: string, organizerId: string) {
+export async function inviteUserToTrip(tripId: string, friendId: string, performerId: string) {
     try {
-        // Verify organizer ownership
+        // Validation: Verify the person inviting is actually part of the trip
+        const performerEntry = await prisma.participant.findUnique({
+            where: {
+                userId_tripId: {
+                    userId: performerId,
+                    tripId: tripId
+                }
+            }
+        })
+
+        if (!performerEntry || performerEntry.status !== 'ACCEPTED') {
+            return { success: false, error: 'Unauthorized: You must be a joined member of this trip to invite others.' }
+        }
+
         const trip = await prisma.trip.findUnique({
             where: { id: tripId },
         })
 
-        if (!trip || trip.organizerId !== organizerId) {
-            return { success: false, error: 'Unauthorized' }
+        if (!trip) {
+            return { success: false, error: 'Trip not found' }
         }
 
         // Check if already invited or joined

@@ -31,6 +31,10 @@ export async function createGearItem(userId: string, data: {
     imageUrl?: string
 }) {
     try {
+        if (data.weightGrams !== undefined && data.weightGrams < 0) {
+            return { success: false, error: 'Weight cannot be negative' }
+        }
+
         const newItem = await prisma.gearItem.create({
             data: {
                 user: { connect: { id: userId } },
@@ -65,6 +69,10 @@ export async function updateGearItem(gearId: string, userId: string, data: {
 
         if (!existing || existing.userId !== userId) {
             return { success: false, error: 'Unauthorized or not found' }
+        }
+
+        if (data.weightGrams !== undefined && data.weightGrams < 0) {
+            return { success: false, error: 'Weight cannot be negative' }
         }
 
         const updatedItem = await prisma.gearItem.update({
