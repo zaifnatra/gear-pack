@@ -123,15 +123,7 @@ export default async function DashboardPage() {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 mb-3">Trending Packs</h3>
-                        <p className="text-xs text-neutral-500 mb-4">See how others are packing for similar trips.</p>
-                        <div className="space-y-3">
-                            {/* Placeholder for trending content */}
-                            <div className="h-2 w-full rounded-full bg-neutral-100 dark:bg-neutral-800" />
-                            <div className="h-2 w-3/4 rounded-full bg-neutral-100 dark:bg-neutral-800" />
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>

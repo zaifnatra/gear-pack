@@ -261,6 +261,7 @@ model Trip {
   externalUrl   String?    // Link to AllTrails, etc.
   latitude      Float?
   longitude     Float?
+  imageUrl      String?    // Custom trip card image
 
   visibility  TripVisibility @default(FRIENDS_ONLY)
   

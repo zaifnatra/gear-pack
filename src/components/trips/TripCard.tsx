@@ -3,7 +3,10 @@
 import { InviteFriendModal } from './InviteFriendModal'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { getTripWeather, TripWeather } from '@/app/actions/weather'
+import { ImageUpload } from '@/components/ui/ImageUpload'
+import { updateTripImage } from '@/app/actions/trips'
 
 interface TripCardProps {
     trip: {
@@ -26,7 +29,9 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip, currentUserId }: TripCardProps) {
+    const router = useRouter()
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+    const [isEditImageOpen, setIsEditImageOpen] = useState(false)
     const [weather, setWeather] = useState<TripWeather | null>(null)
     const startDate = new Date(trip.startDate)
     const endDate = trip.endDate ? new Date(trip.endDate) : null
@@ -49,29 +54,48 @@ export function TripCard({ trip, currentUserId }: TripCardProps) {
         fetchWeather()
     }, [trip.location, trip.startDate, trip.endDate])
 
-    const dateRange = endDate
-        ? `${startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
-        : startDate.toLocaleDateString(undefined, { dateStyle: 'medium' })
+    const isSingleDay = !endDate || (startDate.toDateString() === endDate.toDateString())
 
-    const days = endDate
-        ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-        : 1
+    const dateRange = isSingleDay
+        ? startDate.toLocaleDateString(undefined, { dateStyle: 'medium' })
+        : `${startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${endDate!.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+
+    const durationMs = endDate ? endDate.getTime() - startDate.getTime() : 0
+    const days = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + (isSingleDay ? 0 : 1))
 
     return (
         <>
             <div className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
                 <Link href={`/dashboard/trips/${trip.id}`} className="block">
-                    <div className="h-32 w-full bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden">
-                        {/* Placeholder Cover - Could be a random gradient or image later */}
-                        <div className={`absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 dark:from-emerald-900/20 dark:to-blue-900/20`}></div>
+                    <div className="h-32 w-full bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden group-hover:opacity-90 transition-opacity">
+                        {/* Custom Image or Placeholder Gradient */}
+                        {(trip as any).imageUrl ? (
+                            <img src={(trip as any).imageUrl} alt={trip.name} className="h-full w-full object-cover" />
+                        ) : (
+                            <div className={`absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 dark:from-emerald-900/20 dark:to-blue-900/20`}></div>
+                        )}
 
-                        <div className="absolute bottom-3 left-3 right-3">
-                            <h3 className="truncate text-lg font-bold text-neutral-900 dark:text-neutral-100">{trip.name}</h3>
-                            <div className="flex items-center text-xs text-neutral-600 dark:text-neutral-400">
+                        <div className="absolute bottom-3 left-3 right-3 z-10">
+                            <h3 className="truncate text-lg font-bold text-neutral-900 dark:text-neutral-100 drop-shadow-sm bg-white/50 dark:bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md inline-block mb-1">{trip.name}</h3>
+                            <div className="flex items-center text-xs text-neutral-600 dark:text-neutral-300 bg-white/50 dark:bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md w-fit">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                                 {trip.location || 'No Location'}
                             </div>
                         </div>
+
+                        {isOrganizer && (
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsEditImageOpen(true)
+                                }}
+                                className="absolute top-2 right-2 z-20 rounded-full bg-white/80 p-1.5 text-neutral-700 hover:bg-white hover:text-emerald-600 shadow-sm backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+                                title="Change Cover Image"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex flex-1 flex-col p-4">
@@ -144,6 +168,31 @@ export function TripCard({ trip, currentUserId }: TripCardProps) {
                 tripId={trip.id}
                 currentUserId={currentUserId}
             />
+
+            {
+                isEditImageOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-neutral-900 shadow-xl">
+                            <h3 className="text-lg font-bold mb-4">Change Trip Image</h3>
+                            <div className="flex justify-center mb-6">
+                                <ImageUpload onUploadComplete={async (url) => {
+                                    if (url) {
+                                        await updateTripImage(trip.id, url, currentUserId)
+                                        setIsEditImageOpen(false)
+                                        router.refresh()
+                                    }
+                                }} />
+                            </div>
+                            <button
+                                onClick={() => setIsEditImageOpen(false)}
+                                className="w-full rounded-md border border-neutral-200 py-2 font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )
+            }
         </>
     )
 }

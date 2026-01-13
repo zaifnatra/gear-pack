@@ -42,7 +42,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full min-h-screen flex">
+    <div className="w-full min-h-screen flex relative">
+      <div className="absolute inset-0 z-0 lg:hidden">
+        <img
+          src="/signinpicture.jpeg"
+          alt="Hiking Adventure"
+          className="w-full h-full object-cover opacity-30" // Low opacity to make text readable
+        />
+        <div className="absolute inset-0 bg-neutral-900/10 backdrop-blur-[2px]" />
+      </div>
+
       {/* Left side - Hero section */}
       <div className="hidden lg:flex flex-1 relative bg-neutral-900 items-center justify-center overflow-hidden">
         <img
@@ -63,7 +72,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login/Signup form */}
-      <div className="flex-1 bg-white flex items-center justify-center p-8 sm:p-12">
+      <div className="flex-1 bg-white/90 lg:bg-white flex items-center justify-center p-8 sm:p-12 relative z-10 backdrop-blur-sm lg:backdrop-blur-none">
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">

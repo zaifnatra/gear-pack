@@ -36,12 +36,16 @@ export function AIChat() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
 
-    // Handle URL-based opening
+    // Handle URL-based opening + Close on route change
     useEffect(() => {
         if (searchParams?.get('chat') === 'open') {
             setIsOpen(true)
         }
     }, [searchParams])
+
+    useEffect(() => {
+        setIsOpen(false)
+    }, [pathname])
 
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open)
@@ -57,6 +61,20 @@ export function AIChat() {
     useEffect(() => {
         setTimeout(scrollToBottom, 100);
     }, [messages, isOpen]);
+
+    // Close on click outside
+    const chatRef = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (isOpen && chatRef.current && !chatRef.current.contains(event.target as Node)) {
+                // Check if the click was on a toggle button/trigger that we shouldn't interfere with?
+                // For now, simpler is better.
+                handleOpenChange(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [isOpen])
 
     // Load history on mount
     useEffect(() => {
@@ -127,6 +145,7 @@ export function AIChat() {
                 quickActions: response.quickActions
             }
             setMessages(prev => [...prev, aiMsg])
+            router.refresh() // Refresh UI to show any changes (trips, gear, etc.)
         } catch (error) {
             console.error(error)
             setMessages(prev => [...prev, {

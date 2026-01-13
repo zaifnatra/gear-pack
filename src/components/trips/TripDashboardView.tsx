@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { TripCard } from '@/components/trips/TripCard'
 import { Trip } from '@prisma/client'
@@ -36,6 +36,14 @@ export function TripDashboardView({ initialTrips, invites, userId }: TripDashboa
             }
         })
     }
+
+    // Auto-refresh to catch AI created trips
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.refresh()
+        }, 5000) // Refresh every 5s to catch new trips
+        return () => clearInterval(interval)
+    }, [router])
 
     return (
         <div className="space-y-6">

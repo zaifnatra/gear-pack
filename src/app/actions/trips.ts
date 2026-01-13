@@ -140,7 +140,7 @@ export async function respondToTripInvite(tripId: string, userId: string, status
             })
         } else {
             // Update to ACCEPTED
-            await prisma.participant.update({
+            const updatedParticipant = await prisma.participant.update({
                 where: {
                     userId_tripId: {
                         userId: userId,
@@ -150,8 +150,24 @@ export async function respondToTripInvite(tripId: string, userId: string, status
                 data: {
                     status: 'ACCEPTED',
                     role: 'MEMBER' // Upgrade to member on accept
+                },
+                include: {
+                    trip: {
+                        include: { organizer: true }
+                    },
+                    user: true
                 }
             })
+
+            // Notify Organizer
+            if (updatedParticipant.trip.organizerId !== userId) {
+                await createNotification(
+                    updatedParticipant.trip.organizerId,
+                    NotificationType.SYSTEM,
+                    `${updatedParticipant.user.fullName || updatedParticipant.user.username} joined your trip "${updatedParticipant.trip.name}"`,
+                    `/dashboard/trips/${tripId}`
+                )
+            }
         }
 
         revalidatePath('/dashboard/trips')
@@ -307,5 +323,29 @@ export async function getFriendTrips(userId: string) {
     } catch (error) {
         console.error('Failed to get friend trips:', error)
         return { success: false, error: 'Failed to get friend trips' }
+    }
+}
+
+export async function updateTripImage(tripId: string, imageUrl: string, userId: string) {
+    try {
+        const trip = await prisma.trip.findUnique({
+            where: { id: tripId },
+            select: { organizerId: true }
+        })
+
+        if (!trip || trip.organizerId !== userId) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        await prisma.trip.update({
+            where: { id: tripId },
+            data: { imageUrl }
+        })
+
+        revalidatePath('/dashboard/trips')
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to update trip image:', error)
+        return { success: false, error: 'Failed to update image' }
     }
 }

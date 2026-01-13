@@ -69,14 +69,25 @@ const ExpandableChat: React.FC<ExpandableChatProps> = ({
             className={cn(`fixed ${chatConfig.positions[position]} z-[100]`, className)}
             {...props}
         >
+            {/* Mobile Backdrop */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[95] sm:hidden"
+                    onClick={() => {
+                        if (isControlled && onOpenChange) onOpenChange(false)
+                        else setInternalIsOpen(false)
+                    }}
+                />
+            )}
+
             <div
                 ref={chatRef}
                 className={cn(
-                    "flex flex-col bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-white/20 dark:border-neutral-800 shadow-2xl overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] sm:absolute fixed inset-0 w-full h-full sm:inset-auto ring-1 ring-black/5 dark:ring-white/10",
+                    "flex flex-col bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-white/20 dark:border-neutral-800 shadow-2xl overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] sm:absolute fixed inset-4 bottom-20 sm:inset-auto ring-1 ring-black/5 dark:ring-white/10 z-[100]",
                     chatConfig.chatPositions[position],
                     chatConfig.dimensions[size],
                     isOpen ? chatConfig.states.open : chatConfig.states.closed,
-                    "sm:rounded-3xl", // Premium rounded corners
+                    "rounded-3xl sm:rounded-3xl", // Always rounded now
                     className,
                 )}
             >
@@ -84,7 +95,7 @@ const ExpandableChat: React.FC<ExpandableChatProps> = ({
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-4 right-4 sm:hidden text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
+                    className="absolute top-4 right-4 sm:hidden text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full z-[110]"
                     onClick={toggleChat}
                 >
                     <X className="h-5 w-5" />
@@ -94,6 +105,7 @@ const ExpandableChat: React.FC<ExpandableChatProps> = ({
                 icon={icon}
                 isOpen={isOpen}
                 toggleChat={toggleChat}
+                className="relative z-[100]"
             />
         </div>
     );
@@ -145,7 +157,7 @@ const ExpandableChatToggle: React.FC<ExpandableChatToggleProps> = ({
         variant="default"
         onClick={toggleChat}
         className={cn(
-            "w-14 h-14 rounded-full shadow-md flex items-center justify-center hover:shadow-lg hover:shadow-black/30 transition-all duration-300",
+            "w-14 h-14 rounded-full shadow-md hidden md:flex items-center justify-center hover:shadow-lg hover:shadow-black/30 transition-all duration-300",
             className,
         )}
         {...props}

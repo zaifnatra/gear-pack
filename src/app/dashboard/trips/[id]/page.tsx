@@ -13,6 +13,8 @@ interface PageProps {
     params: Promise<{ id: string }>
 }
 
+import { TripDetailsHeader } from './TripDetailsHeader'
+
 export default async function TripDetailsPage({ params }: PageProps) {
     const { id } = await params
     const result = await getTrip(id)
@@ -58,12 +60,11 @@ export default async function TripDetailsPage({ params }: PageProps) {
     }
     const currentUserId = user.id
 
+    // Date logic moved to TripDetailsHeader
     const startDate = new Date(trip.startDate)
     const endDate = trip.endDate ? new Date(trip.endDate) : null
-    const dateRange = endDate
-        ? `${startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
-        : startDate.toLocaleDateString(undefined, { dateStyle: 'medium' })
 
+    // We still need days for RecommendedGear
     const days = endDate
         ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
         : 1
@@ -71,36 +72,7 @@ export default async function TripDetailsPage({ params }: PageProps) {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="relative h-64 w-full overflow-hidden rounded-xl bg-neutral-900">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 to-black/60 z-10"></div>
-                {/* Fallback pattern or image */}
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-50 block"></div>
-
-                <div className="absolute bottom-6 left-6 z-20 text-white">
-                    <div className="flex gap-2 mb-2">
-                        <span className="inline-flex items-center rounded-md bg-white/20 px-2 py-1 text-xs font-medium backdrop-blur-md">
-                            {trip.type.replace('_', ' ')}
-                        </span>
-                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium backdrop-blur-md ${trip.difficulty === 'EASY' ? 'bg-green-500/30' :
-                            trip.difficulty === 'MODERATE' ? 'bg-yellow-500/30' :
-                                'bg-red-500/30'
-                            }`}>
-                            {trip.difficulty}
-                        </span>
-                    </div>
-                    <h1 className="text-3xl font-bold">{trip.name}</h1>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-neutral-200">
-                        <span className="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                            {trip.location || 'Unknown Location'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
-                            {dateRange} ({days} days)
-                        </span>
-                    </div>
-                </div>
-            </div>
+            <TripDetailsHeader trip={trip} currentUserId={currentUserId} />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Main Content */}

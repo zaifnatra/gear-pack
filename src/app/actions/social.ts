@@ -81,6 +81,13 @@ export async function sendFriendRequest(senderId: string, receiverId: string) {
             }
         })
 
+        await createNotification(
+            receiverId,
+            NotificationType.FRIEND_REQUEST,
+            `You have a new friend request!`,
+            '/dashboard/social'
+        )
+
         revalidatePath('/dashboard/social')
         return { success: true }
     } catch (error) {
@@ -96,10 +103,19 @@ export async function respondToFriendRequest(requestId: string, status: 'ACCEPTE
                 where: { id: requestId }
             })
         } else {
-            await prisma.friendship.update({
+            const updated = await prisma.friendship.update({
                 where: { id: requestId },
-                data: { status: 'ACCEPTED' }
+                data: { status: 'ACCEPTED' },
+                include: { friend: true, user: true } // friend is receiver (current user), user is sender (requester)
             })
+
+            // Notify the requester (updated.userId) that the receiver (updated.friend.username) accepted
+            await createNotification(
+                updated.userId,
+                NotificationType.SYSTEM,
+                `${updated.friend.fullName || updated.friend.username} accepted your friend request`,
+                `/dashboard/social/${updated.friendId}/closet`
+            )
         }
 
         revalidatePath('/dashboard/social')
