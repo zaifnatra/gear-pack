@@ -141,58 +141,7 @@ function isClearlyOutOfScope(message: string) {
     return isMath || isPolitics || isDating
 }
 
-async function classifyScopeWithBackboard(userMessage: string, lastAssistantMessage?: string) {
-    const scopeAssistantId = process.env.BACKBOARD_SCOPE_ASSISTANT_ID
-    if (!scopeAssistantId) return null
 
-    const threadId = await createThread(scopeAssistantId)
-    if (!threadId) return null
-
-    const contextBlock = lastAssistantMessage
-        ? `\nPREVIOUS ASSISTANT MESSAGE:\n"""${lastAssistantMessage.slice(0, 200).replaceAll('"""', '"')}..."""\n`
-        : ""
-
-    const prompt = `Decide whether the user's message is in-scope for GearPack/PackBot.
-
-IN-SCOPE:
-- hiking, backpacking, camping, trails, mountains, trip planning/logistics, outdoor safety, navigation, packing/gear
-- brief small talk (greetings, thanks, short jokes) is OK
-- simple affirmations/negations or responses to questions (e.g. "yes", "sure", "no", "go ahead", "sounds good")
-
-OUT-OF-SCOPE:
-- anything unrelated to outdoors/trips/gear (e.g. math homework, politics, dating advice)
-
-When asked, return ONLY valid JSON (no markdown) with this shape:
-{"in_scope": true, "reason": "short reason"}
-
-${contextBlock}
-User message:
-"""${userMessage.replaceAll('"""', '"')}"""`
-
-    await addMessage(threadId, 'user', prompt)
-
-    // Backboard runs are effectively attached to the message; poll by reading thread until an assistant message appears.
-    const start = Date.now()
-    const timeoutMs = 8000
-    const intervalMs = 400
-
-    while (Date.now() - start < timeoutMs) {
-        const responseText = await getLatestResponse(threadId)
-        if (responseText && responseText.trim()) {
-            try {
-                const parsed = JSON.parse(responseText.trim())
-                if (typeof parsed?.in_scope === 'boolean') {
-                    return { inScope: parsed.in_scope, reason: typeof parsed.reason === 'string' ? parsed.reason : undefined }
-                }
-            } catch {
-                // Ignore parse errors; keep polling briefly.
-            }
-        }
-        await new Promise((r) => setTimeout(r, intervalMs))
-    }
-
-    return null
-}
 
 export async function sendAIMessage(userMessage: string): Promise<ChatResponse> {
     const supabase = await createClient()
@@ -243,13 +192,7 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
         return buildOutOfScopeResponse()
     }
 
-    if (!isPreferenceAnswer) {
-        // Fetch last assistant message for context
-        const lastAssistantMessage = await getLatestResponse(threadId)
 
-        const scope = await classifyScopeWithBackboard(userMessage, lastAssistantMessage)
-        if (scope && scope.inScope === false) return buildOutOfScopeResponse()
-    }
 
     if (extractedUpdates.length > 0) {
         prefStore = applyPreferenceUpdates(prefStore, extractedUpdates, timestamp).store
@@ -344,7 +287,9 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
 async function pollRun(threadId: string, initialRun: any, userId: string) {
     let run = initialRun
     let loops = 0
-    const maxLoops = 10 // Safety break, though we expect synchronous-ish responses
+    // Fix: Increase max loops significantly. 60 loops * 500ms = 30 seconds max wait.
+    // 200ms was too fast and 10 loops (2s total) was way too short for tool execution + AI generation.
+    const maxLoops = 60
 
     while (loops < maxLoops) {
         const status = (run.status || 'queued').toLowerCase()
@@ -363,9 +308,7 @@ async function pollRun(threadId: string, initialRun: any, userId: string) {
                 throw new Error("AI Protocol Error")
             }
 
-            const toolOutputs = []
-
-            for (const call of toolCalls) {
+            const toolOutputs = await Promise.all(toolCalls.map(async (call: any) => {
                 // Backboard might parse arguments for us or give string
                 let args = call.function.arguments
                 if (typeof args === 'string') {
@@ -408,11 +351,11 @@ async function pollRun(threadId: string, initialRun: any, userId: string) {
                     output = JSON.stringify({ error: e.message })
                 }
 
-                toolOutputs.push({
+                return {
                     tool_call_id: call.id,
                     output: output
-                })
-            }
+                }
+            }))
 
             // Submit outputs - this returns the NEXT run state
             run = await submitToolOutputs(threadId, run.run_id || run.id, toolOutputs)
@@ -423,13 +366,13 @@ async function pollRun(threadId: string, initialRun: any, userId: string) {
             // If we get here with non-terminal status, we might be stuck.
             // Let's assume Backboard always returns settled state or we wait a bit.
             if (status === 'queued' || status === 'in_progress') {
-                await new Promise(r => setTimeout(r, 1000))
-                // If we can't fetch by ID, and we are stuck in progress, we are kind of blind.
-                // But let's hope submitToolOutputs waits.
-                // For initial addMessage, we already waited.
-                // If we are stuck here, we might need to break.
-                console.warn("Got queued/in_progress but cannot poll. Breaking.")
-                break;
+                // Wait 500ms between checks
+                await new Promise(r => setTimeout(r, 500))
+
+                // If we've waited > 10s (20 loops) and still queued, log a warning but keep waiting
+                if (loops === 20) console.warn("AI taking longer than expected...")
+
+                // Do NOT break here. We continue the loop until maxLoops.
             }
             loops++
         }

@@ -50,7 +50,33 @@ export async function createTrip(userId: string, params: CreateTripParams) {
                 }
             }
         })
-        return { success: true, tripId: trip.id, message: `Trip "${trip.name}" created successfully!` }
+
+        // Auto-fetch weather to enforce brand requirement
+        let weatherData = null
+        if (params.latitude && params.longitude) {
+            try {
+                // Reuse existing weather logic (daily by default for general trip view)
+                const weatherRes = await getWeatherForecast({
+                    latitude: params.latitude,
+                    longitude: params.longitude,
+                    startDate: params.startDate,
+                    endDate: params.endDate,
+                    tripType: "OTHER" // Default to daily for summary
+                })
+                if (weatherRes.success) {
+                    weatherData = weatherRes
+                }
+            } catch (wError) {
+                console.warn("Auto-weather fetch failed during createTrip", wError)
+            }
+        }
+
+        return {
+            success: true,
+            tripId: trip.id,
+            message: `Trip "${trip.name}" created successfully!`,
+            weather: weatherData ? weatherData : "Weather could not be fetched (missing coordinates or error)."
+        }
     } catch (error) {
         console.error("Tool Error: createTrip", error)
         return { success: false, error: "Failed to create trip in database." }
@@ -66,15 +92,15 @@ export async function getUserGear(userId: string) {
             orderBy: { category: { name: 'asc' } }
         })
 
-        // Format for AI to save tokens/complexity
-        return gear.map(item => ({
-            id: item.id,
-            name: item.name,
-            category: item.category.name,
-            weight: item.weightGrams ? `${item.weightGrams}g` : 'N/A',
-            tempRating: item.tempRating ? `${item.tempRating}F` : undefined,
-            condition: item.condition
-        }))
+        if (!gear || gear.length === 0) return []
+
+        // Format for AI as compact strings to save huge amounts of tokens
+        // Format: "Item Name (Category) [ID: uuid] - Weight"
+        return gear.map(item => {
+            const weight = item.weightGrams ? `${item.weightGrams}g` : '?'
+            const temp = item.tempRating ? ` ${item.tempRating}F` : ''
+            return `${item.name} (${item.category.name}) [ID: ${item.id}] - ${weight}${temp}`
+        })
     } catch (error) {
         console.error("Tool Error: getUserGear", error)
         return { success: false, error: "Failed to fetch gear." }
@@ -103,7 +129,13 @@ export async function addGearToTrip(params: AddGearParams) {
 
             // Robustness: AI might send just a string ID
             if (typeof item === 'string') {
-                gearId = item
+                // If the AI sends the full string "Start (Category) [ID: 123]", extract ID
+                const match = (item as string).match(/\[ID:\s*([a-zA-Z0-9-]+)\]/)
+                if (match) {
+                    gearId = match[1]
+                } else {
+                    gearId = item
+                }
             } else {
                 gearId = item.gearId
                 quantity = item.quantity || 1
@@ -113,6 +145,13 @@ export async function addGearToTrip(params: AddGearParams) {
 
             if (!gearId) {
                 console.warn("Skipping gear item with missing ID", item)
+                continue
+            }
+
+            // Verify gear exists first to avoid foreign key errors if AI hallucinates ID
+            const exists = await prisma.gearItem.count({ where: { id: gearId } })
+            if (!exists) {
+                console.warn(`Skipping non-existent gear ID: ${gearId}`)
                 continue
             }
 
@@ -230,7 +269,16 @@ export async function getWeatherForecast(params: {
             endDate: params.endDate,
             mode
         })
-        return { success: true, forecast }
+
+        // Optimization: Return only the essential data to save tokens
+        // We strip 'units', 'source', 'timezone', and raw coordinate repeats if they are standard.
+        // We keep the quantitative data (daily/hourly) and the summary.
+        return {
+            success: true,
+            summary: forecast.summary,
+            // Only include ONE of hourly/daily based on mode to avoid double-sending
+            [mode]: mode === 'hourly' ? forecast.hourly : forecast.daily
+        }
     } catch (e: any) {
         console.error("Tool Error: getWeatherForecast", e)
         return { success: false, error: e?.message || "Failed to fetch weather forecast." }
