@@ -3,7 +3,7 @@ import 'dotenv/config'
 
 const BACKBOARD_API_URL = "https://app.backboard.io/api"
 const PACKBOT_MODEL = "gpt-5"
-const SCOPE_GUARD_MODEL = "gpt-4o-mini"
+const SCOPE_GUARD_MODEL = "gpt-4.1-mini"
 
 async function createAssistant(apiKey: string, payload: any) {
   const response = await fetch(`${BACKBOARD_API_URL}/assistants`, {
