@@ -13,6 +13,7 @@ export default defineConfig({
       'src/lib/ai/__tests__/**/*.test.ts',
     ],
     setupFiles: ['src/test/setup-server.ts'],
+    fileParallelism: false,
   },
   resolve: {
     alias: {
