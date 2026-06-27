@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Edit2, Trash2, Reply, Smile, MoreHorizontal, Check, CheckCheck } from 'lucide-react'
+import { Edit2, Trash2, Reply, Smile } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SocialAvatar } from './SocialAvatar'
 
 interface Reaction {
     emoji: string
@@ -74,13 +74,11 @@ export function MessageBubble({
             {!isMe && (
                 <div className="h-8 w-8 flex-shrink-0 flex flex-col justify-end">
                     {showAvatar ? (
-                        message.sender.avatarUrl ? (
-                            <img src={message.sender.avatarUrl} className="h-8 w-8 rounded-full object-cover" alt={message.sender.username} />
-                        ) : (
-                            <div className="h-8 w-8 rounded-full bg-neutral-200 flex items-center justify-center text-[10px] font-bold text-neutral-500">
-                                {message.sender.username.substring(0, 2).toUpperCase()}
-                            </div>
-                        )
+                        <SocialAvatar
+                            src={message.sender.avatarUrl}
+                            name={message.sender.fullName || message.sender.username}
+                            size="sm"
+                        />
                     ) : (
                         <div className="w-8" />
                     )}
