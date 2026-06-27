@@ -7,10 +7,14 @@ vi.mock('next/cache', () => ({
 }))
 
 vi.mock('next/headers', () => ({
-  headers: vi.fn(() => new Map()),
-  cookies: vi.fn(() => ({
-    get: vi.fn(),
-    set: vi.fn(),
-    delete: vi.fn(),
-  })),
+  headers: vi.fn(() => Promise.resolve(new Headers())),
+  cookies: vi.fn(() =>
+    Promise.resolve({
+      get: vi.fn(),
+      getAll: vi.fn(() => []),
+      has: vi.fn(() => false),
+      set: vi.fn(),
+      delete: vi.fn(),
+    })
+  ),
 }))
