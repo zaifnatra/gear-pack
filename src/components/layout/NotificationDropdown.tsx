@@ -115,7 +115,7 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 origin-top-right rounded-xl border border-neutral-200 bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 z-50">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 origin-top-right overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 z-50">
                     <div className="flex items-center justify-between border-b border-neutral-100 p-4 dark:border-neutral-800">
                         <h3 className="font-heading font-semibold text-neutral-900 dark:text-neutral-100">Notifications</h3>
                         {unreadCount > 0 && (
@@ -125,17 +125,17 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
                         )}
                     </div>
 
-                    <div className="max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800">
+                    <div className="max-h-[60vh] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800">
                         {notifications.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 text-neutral-500">
                                 <p className="text-sm">No notifications</p>
                             </div>
                         ) : (
-                            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                            <div className="space-y-1">
                                 {notifications.map((notification) => (
                                     <div
                                         key={notification.id}
-                                        className={`flex gap-4 p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${!notification.isRead ? 'bg-emerald-50/30 dark:bg-emerald-900/10' : ''}`}
+                                        className={`flex gap-4 rounded-lg p-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${!notification.isRead ? 'bg-emerald-50/30 dark:bg-emerald-900/10' : ''}`}
                                     >
                                         <div className="flex-shrink-0 mt-1">
                                             {getIcon(notification.type)}
