@@ -355,6 +355,6 @@ export async function getOrCreateTripConversation(tripId: string, currentUserId:
 
     } catch (error) {
         console.error('Failed to get/create trip chat:', error)
-        return { success: false, error: 'Failed' }
+        return { success: false, error: 'Failed to open trip chat.' }
     }
 }

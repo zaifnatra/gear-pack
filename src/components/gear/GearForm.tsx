@@ -5,16 +5,17 @@ import { createGearItem, updateGearItem, deleteGearItem } from '@/app/actions/ge
 import { getCategories } from '@/app/actions/categories'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { OUTDOOR_BRANDS } from '@/lib/constants/brands'
+import type { GearItemData, CategoryData } from '@/types/gear'
 
 interface GearFormProps {
     userId: string
     onSuccess: () => void
-    initialData?: any // Can be typed more strictly later
+    initialData?: GearItemData
 }
 
 export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
     const [isPending, startTransition] = useTransition()
-    const [categories, setCategories] = useState<any[]>([])
+    const [categories, setCategories] = useState<CategoryData[]>([])
 
     // Form State (initialized from props if available)
     const [name, setName] = useState(initialData?.name || '')
@@ -184,7 +185,7 @@ export function GearForm({ userId, onSuccess, initialData }: GearFormProps) {
                     <option value="">Select a category</option>
                     {categories.map((parent) => (
                         <optgroup key={parent.id} label={parent.name}>
-                            {parent.children?.map((child: any) => (
+                            {parent.children?.map((child) => (
                                 <option key={child.id} value={child.id}>{child.name}</option>
                             ))}
                         </optgroup>

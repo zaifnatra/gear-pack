@@ -48,9 +48,9 @@ export async function searchUsers(query: string, currentUserId: string) {
             friendships.map(f => f.userId === currentUserId ? f.friendId : f.userId)
         )
 
-        const filterdUsers = users.filter(u => !connectedUserIds.has(u.id))
+        const filteredUsers = users.filter(u => !connectedUserIds.has(u.id))
 
-        return { success: true, data: filterdUsers }
+        return { success: true, data: filteredUsers }
     } catch (error) {
         console.error('Search users error:', error)
         return { success: false, error: 'Failed to search users' }

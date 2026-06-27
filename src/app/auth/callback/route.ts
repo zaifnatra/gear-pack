@@ -65,7 +65,7 @@ export async function GET(request: Request) {
                             username: username,
                             fullName: user.user_metadata.full_name,
                             avatarUrl: user.user_metadata.avatar_url,
-                            preferences: createDefaultPreferenceStore() as any, // Cast for safety
+                            preferences: createDefaultPreferenceStore() as object,
                         }
                     })
                 }
