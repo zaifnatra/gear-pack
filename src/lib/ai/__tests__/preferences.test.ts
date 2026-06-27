@@ -33,7 +33,7 @@ describe('normalizePreferenceStore', () => {
     })
 
     it('resets a corrupted entry (invalid value) to default', () => {
-        const base = createDefaultPreferenceStore() as Record<string, unknown>
+        const base = createDefaultPreferenceStore() as unknown as Record<string, unknown>
         const baseProfile = (base.profile as Record<string, unknown>)
         baseProfile.pack_style = { value: 'invalid_value', confidence: 'default', updated_at: '2024-01-01T00:00:00Z' }
         const { store, changed } = normalizePreferenceStore(base)

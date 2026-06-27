@@ -52,20 +52,20 @@ describe('getChatHistory', () => {
     })
 
     it('returns empty array when user is not authenticated', async () => {
-        vi.mocked(createClient).mockResolvedValue(makeMockSupabase(null) as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
+        vi.mocked(createClient).mockResolvedValue(makeMockSupabase(null) as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
         const result = await getChatHistory()
         expect(result).toEqual([])
     })
 
     it('returns empty array when user has no Backboard thread', async () => {
-        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
+        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
         vi.mocked(prisma.user.findUnique).mockResolvedValue({ backboardThreadId: null } as never)
         const result = await getChatHistory()
         expect(result).toEqual([])
     })
 
     it('filters out tool role messages', async () => {
-        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
+        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
         vi.mocked(prisma.user.findUnique).mockResolvedValue({ backboardThreadId: 'thread1' } as never)
         vi.mocked(getThreadHistory).mockResolvedValue([
             { role: 'user', content: 'Hello!' },
@@ -80,7 +80,7 @@ describe('getChatHistory', () => {
     })
 
     it('filters out raw JSON tool output echoed as user role', async () => {
-        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
+        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
         vi.mocked(prisma.user.findUnique).mockResolvedValue({ backboardThreadId: 'thread1' } as never)
         vi.mocked(getThreadHistory).mockResolvedValue([
             { role: 'user', content: '{"success":true,"data":[]}' },
@@ -92,7 +92,7 @@ describe('getChatHistory', () => {
     })
 
     it('keeps trail_options UI card messages despite being JSON', async () => {
-        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
+        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
         vi.mocked(prisma.user.findUnique).mockResolvedValue({ backboardThreadId: 'thread1' } as never)
         vi.mocked(getThreadHistory).mockResolvedValue([
             { role: 'assistant', content: '{"type": "trail_options","message":"Here are trails"}' }
@@ -102,7 +102,7 @@ describe('getChatHistory', () => {
     })
 
     it('strips [Current Context: ...] injection from user messages', async () => {
-        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
+        vi.mocked(createClient).mockResolvedValue(makeMockSupabase('user1') as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never)
         vi.mocked(prisma.user.findUnique).mockResolvedValue({ backboardThreadId: 'thread1' } as never)
         vi.mocked(getThreadHistory).mockResolvedValue([
             { role: 'user', content: '[Current Context: Today is Mon Jan 01 2024. User Location: Unknown. User Preferences: {}.] What hikes are near Seattle?' }
