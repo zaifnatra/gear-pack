@@ -4,12 +4,12 @@ import { prisma } from '@/lib/prisma'
 import { FriendshipStatus, NotificationType } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from './notifications'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function searchUsers(query: string, currentUserId: string) {
     if (query.length < 2) return { success: true, data: [] }
 
     try {
-        // Find users matching query who are NOT the current user
         const users = await prisma.user.findMany({
             where: {
                 AND: [
@@ -20,7 +20,15 @@ export async function searchUsers(query: string, currentUserId: string) {
                             { email: { contains: query, mode: 'insensitive' } }
                         ]
                     },
-                    { id: { not: currentUserId } }
+                    { id: { not: currentUserId } },
+                    {
+                        NOT: {
+                            OR: [
+                                { sentRequests: { some: { friendId: currentUserId } } },
+                                { receivedRequests: { some: { userId: currentUserId } } },
+                            ]
+                        }
+                    }
                 ]
             },
             take: 10,
@@ -32,25 +40,7 @@ export async function searchUsers(query: string, currentUserId: string) {
             }
         })
 
-        // Filter out existing friends or pending requests
-        // This could be optimized with a raw query or more complex where clause, 
-        // but for now we'll filter in memory for simplicity with small data sets
-        const friendships = await prisma.friendship.findMany({
-            where: {
-                OR: [
-                    { userId: currentUserId },
-                    { friendId: currentUserId }
-                ]
-            }
-        })
-
-        const connectedUserIds = new Set(
-            friendships.map(f => f.userId === currentUserId ? f.friendId : f.userId)
-        )
-
-        const filteredUsers = users.filter(u => !connectedUserIds.has(u.id))
-
-        return { success: true, data: filteredUsers }
+        return { success: true, data: users }
     } catch (error) {
         console.error('Search users error:', error)
         return { success: false, error: 'Failed to search users' }
@@ -59,6 +49,11 @@ export async function searchUsers(query: string, currentUserId: string) {
 
 export async function sendFriendRequest(senderId: string, receiverId: string) {
     try {
+        const { allowed } = checkRateLimit(`friend:${senderId}`, 20, 60 * 60 * 1000)
+        if (!allowed) {
+            return { success: false, error: 'You have sent too many friend requests recently. Please wait before sending more.' }
+        }
+
         // Check if exists
         const existing = await prisma.friendship.findFirst({
             where: {

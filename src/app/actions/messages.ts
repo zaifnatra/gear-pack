@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 // Create a new conversation (DM or Group) or return existing DM
 export async function createConversation(currentUserId: string, participantIds: string[], name?: string) {
@@ -79,6 +80,11 @@ export async function createConversation(currentUserId: string, participantIds: 
 // Send a message (with optional reply)
 export async function sendMessage(conversationId: string, senderId: string, content: string, replyToId?: string) {
     try {
+        const { allowed } = checkRateLimit(`msg:${senderId}`, 60, 60 * 60 * 1000)
+        if (!allowed) {
+            return { success: false, error: 'You are sending messages too quickly. Please slow down.' }
+        }
+
         const message = await prisma.message.create({
             data: {
                 conversationId,
@@ -239,10 +245,13 @@ export async function reactToMessage(messageId: string, userId: string, emoji: s
     }
 }
 
-export async function getMessages(conversationId: string) {
+export async function getMessages(conversationId: string, cursor?: string, limit = 30) {
     try {
         const messages = await prisma.message.findMany({
             where: { conversationId },
+            ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+            take: limit,
+            orderBy: { createdAt: 'desc' },
             include: {
                 sender: {
                     select: { id: true, username: true, fullName: true, avatarUrl: true }
@@ -260,12 +269,18 @@ export async function getMessages(conversationId: string) {
                     }
                 }
             },
-            orderBy: { createdAt: 'asc' }
         })
-        return { success: true, data: messages }
+
+        const nextCursor = messages.length === limit ? messages[messages.length - 1].id : null
+
+        return {
+            success: true,
+            data: messages.reverse(),
+            nextCursor,
+        }
     } catch (error) {
         console.error('Failed to fetch messages:', error)
-        return { success: false, error: 'Failed to fetch messages' }
+        return { success: false, data: [], nextCursor: null, error: 'Failed to fetch messages' }
     }
 }
 
