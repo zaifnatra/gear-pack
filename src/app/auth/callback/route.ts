@@ -4,6 +4,17 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+function getRedirectOrigin(request: Request) {
+    const requestUrl = new URL(request.url)
+    const forwardedHost = request.headers.get('x-forwarded-host')
+    const forwardedProto = request.headers.get('x-forwarded-proto')
+    const host = forwardedHost || request.headers.get('host') || requestUrl.host
+    const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1')
+    const protocol = isLocal ? 'http' : forwardedProto || requestUrl.protocol.replace(':', '') || 'https'
+
+    return `${protocol}://${host}`
+}
+
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
@@ -62,16 +73,7 @@ export async function GET(request: Request) {
                 console.error("Failed to sync Google user to Prisma:", e)
             }
 
-            const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
-            const isLocalEnv = process.env.NODE_ENV === 'development'
-            if (isLocalEnv) {
-                // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-                return NextResponse.redirect(`${origin}${next}`)
-            } else if (forwardedHost) {
-                return NextResponse.redirect(`https://${forwardedHost}${next}`)
-            } else {
-                return NextResponse.redirect(`${origin}${next}`)
-            }
+            return NextResponse.redirect(`${getRedirectOrigin(request)}${next}`)
         }
     }
 
