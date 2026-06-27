@@ -104,7 +104,7 @@ export async function signUp(formData: FormData) {
         }
     )
 
-    const origin = (await headers()).get('origin')
+    const origin = (await headers()).get('origin') || 'http://localhost:3000'
 
     const { data, error } = await supabase.auth.signUp({
         email,
@@ -225,7 +225,7 @@ export async function resetPassword(formData: FormData) {
         }
     )
 
-    const origin = (await headers()).get('origin')
+    const origin = (await headers()).get('origin') || 'http://localhost:3000'
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${origin}/auth/callback?next=/dashboard/profile`, // Redirect to profile to set new password

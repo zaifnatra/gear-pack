@@ -4,9 +4,6 @@ import React, { useState, useRef, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { signOut } from '@/app/actions/auth'
 
-
-import Image from 'next/image'
-
 interface ProfileDropdownProps {
     user: {
         fullName: string | null
@@ -17,6 +14,7 @@ interface ProfileDropdownProps {
 
 export function ProfileDropdown({ user }: ProfileDropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
+    const [imageFailed, setImageFailed] = useState(false)
     const [isPending, startTransition] = useTransition()
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -33,6 +31,10 @@ export function ProfileDropdown({ user }: ProfileDropdownProps) {
         }
     }, [])
 
+    useEffect(() => {
+        setImageFailed(false)
+    }, [user?.avatarUrl])
+
     const handleSignOut = () => {
         startTransition(() => {
             signOut()
@@ -41,20 +43,23 @@ export function ProfileDropdown({ user }: ProfileDropdownProps) {
 
     const displayName = user?.fullName || user?.username || 'User'
     const initial = displayName[0].toUpperCase()
+    const avatarUrl = imageFailed ? null : user?.avatarUrl
 
     return (
         <div className="relative" ref={dropdownRef}>
             <button
+                type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className="relative h-8 w-8 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100 hover:ring-2 hover:ring-emerald-500/50 dark:border-neutral-700 dark:bg-neutral-800"
             >
-                {user?.avatarUrl ? (
-                    <Image
-                        src={user.avatarUrl}
+                {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={avatarUrl}
                         alt={displayName}
-                        fill
-                        className="object-cover"
-                        sizes="32px"
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={() => setImageFailed(true)}
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center bg-emerald-100 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-500">
