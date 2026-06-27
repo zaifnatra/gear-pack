@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     name: 'client',
     environment: 'happy-dom',
+    globals: true,
     include: ['src/components/**/__tests__/**/*.test.tsx'],
     setupFiles: ['src/test/setup-client.ts'],
   },
