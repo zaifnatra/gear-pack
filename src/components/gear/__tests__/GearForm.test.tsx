@@ -38,8 +38,9 @@ describe('GearForm', () => {
     vi.clearAllMocks()
   })
 
-  it('renders the Item Name input', () => {
+  it('renders the Item Name input', async () => {
     render(<GearForm userId="user-1" onSuccess={onSuccess} />)
+    await screen.findByText('Tent')
     expect(screen.getByPlaceholderText('e.g. Zpacks Duplex')).toBeInTheDocument()
   })
 
@@ -48,12 +49,13 @@ describe('GearForm', () => {
     expect(await screen.findByText('Tent')).toBeInTheDocument()
   })
 
-  it('shows "Add to Closet" button when no initialData', () => {
+  it('shows "Add to Closet" button when no initialData', async () => {
     render(<GearForm userId="user-1" onSuccess={onSuccess} />)
+    await screen.findByText('Tent')
     expect(screen.getByText('Add to Closet')).toBeInTheDocument()
   })
 
-  it('shows "Save Changes" and "Delete" button when editing', () => {
+  it('shows "Save Changes" and "Delete" button when editing', async () => {
     render(
       <GearForm
         userId="user-1"
@@ -68,6 +70,7 @@ describe('GearForm', () => {
         }}
       />
     )
+    await screen.findByText('Tent')
     expect(screen.getByText('Save Changes')).toBeInTheDocument()
     expect(screen.getByText('Delete')).toBeInTheDocument()
   })
