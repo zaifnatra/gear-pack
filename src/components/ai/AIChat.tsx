@@ -237,9 +237,9 @@ export function AIChat() {
                                     )}
 
                                     {/* Trail Options Carousel */}
-                                    {msg.data?.type === 'trail_options' && msg.data?.options && (
+                                    {msg.data?.type === 'trail_options' && msg.data?.options != null && (
                                         <div className="flex w-full flex-col gap-2">
-                                            {msg.data.options.map((trail: TrailOption) => (
+                                            {(msg.data.options as TrailOption[]).map((trail: TrailOption) => (
                                                 <div key={trail.id} className="origin-left animate-in fade-in slide-in-from-left-2 duration-300">
                                                     <TrailCard
                                                         trail={trail}
@@ -251,9 +251,9 @@ export function AIChat() {
                                     )}
 
                                     {/* Gear Analysis */}
-                                    {msg.data?.type === 'gear_analysis' && msg.data && (
+                                    {msg.data?.type === 'gear_analysis' && msg.data != null && (
                                         <div className="w-full overflow-hidden rounded-2xl border border-neutral-100 dark:border-neutral-800 shadow-sm">
-                                            <GearAnalysis data={msg.data} />
+                                            <GearAnalysis data={msg.data as unknown as GearAnalysisData} />
                                         </div>
                                     )}
                                 </div>
