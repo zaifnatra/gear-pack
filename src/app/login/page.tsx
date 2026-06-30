@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Typewriter } from '@/components/ui/typewriter-text'
 
+const appOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN!.replace(/\/$/, '')
+
 export default function LoginPage() {
     const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login')
     const [showPassword, setShowPassword] = useState(false)
@@ -114,7 +116,7 @@ export default function LoginPage() {
                                             await supabase.auth.signInWithOAuth({
                                                 provider: 'google',
                                                 options: {
-                                                    redirectTo: `${window.location.origin}/auth/callback`,
+                                                    redirectTo: `${appOrigin}/auth/callback`,
                                                 },
                                             })
                                         }}

@@ -1,13 +1,16 @@
 'use server'
 
 import { createServerClient } from '@supabase/ssr'
-import { cookies, headers } from 'next/headers'
+import type { Prisma } from '@prisma/client'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { createDefaultPreferenceStore } from '@/lib/ai/preferences'
 
+const appOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN!.replace(/\/$/, '')
+
 export async function signIn(formData: FormData) {
-    let login = formData.get('login') as string // Can be email or username
+    const login = formData.get('login') as string // Can be email or username
     const password = formData.get('password') as string
     const cookieStore = await cookies()
 
@@ -104,13 +107,11 @@ export async function signUp(formData: FormData) {
         }
     )
 
-    const origin = (await headers()).get('origin') || 'http://localhost:3000'
-
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            emailRedirectTo: `${origin}/auth/callback`,
+            emailRedirectTo: `${appOrigin}/auth/callback`,
             data: {
                 full_name: fullName,
                 username: username,
@@ -135,7 +136,7 @@ export async function signUp(formData: FormData) {
                     email: email,
                     fullName: fullName,
                     username: username,
-                    preferences: createDefaultPreferenceStore() as any,
+                    preferences: createDefaultPreferenceStore() as unknown as Prisma.InputJsonValue,
                 }
             })
             return { success: true, checkEmail: true }
@@ -154,7 +155,7 @@ export async function signUp(formData: FormData) {
                     email: email,
                     fullName: fullName,
                     username: username,
-                    preferences: createDefaultPreferenceStore() as any,
+                    preferences: createDefaultPreferenceStore() as unknown as Prisma.InputJsonValue,
                 }
             })
         } catch (dbError) {
@@ -225,10 +226,8 @@ export async function resetPassword(formData: FormData) {
         }
     )
 
-    const origin = (await headers()).get('origin') || 'http://localhost:3000'
-
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/auth/callback?next=/dashboard/profile`, // Redirect to profile to set new password
+        redirectTo: `${appOrigin}/auth/callback?next=/dashboard/profile`, // Redirect to profile to set new password
     })
 
     if (error) {

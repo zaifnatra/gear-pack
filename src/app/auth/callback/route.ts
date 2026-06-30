@@ -10,10 +10,7 @@ import { NextResponse } from 'next/server'
 const AVATAR_BUCKET = 'avatars'
 const GOOGLE_AVATAR_HOSTS = ['googleusercontent.com', 'google.com']
 const ALLOWED_AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'])
-
-function getRedirectOrigin(request: Request) {
-    return process.env.APP_ORIGIN?.replace(/\/$/, '') || new URL(request.url).origin
-}
+const appOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN!.replace(/\/$/, '')
 
 function isGoogleHostedAvatar(url: string | null | undefined) {
     if (!url) return false
@@ -100,13 +97,13 @@ async function cacheGoogleAvatar(
 }
 
 export async function GET(request: Request) {
-    const { searchParams, origin } = new URL(request.url)
+    const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     // if "next" is in param, use it as the redirect URL
     const next = searchParams.get('next') ?? '/dashboard'
 
     if (!code) {
-        return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+        return NextResponse.redirect(`${appOrigin}/auth/auth-code-error`)
     }
 
     const cookieStore = await cookies()
@@ -135,7 +132,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error || !data?.session?.user) {
-        return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+        return NextResponse.redirect(`${appOrigin}/auth/auth-code-error`)
     }
 
     const user = data.session.user
@@ -176,5 +173,5 @@ export async function GET(request: Request) {
         console.error("Failed to sync Google user to Prisma:", e)
     }
 
-    return NextResponse.redirect(`${getRedirectOrigin(request)}${next}`)
+    return NextResponse.redirect(`${appOrigin}${next}`)
 }
