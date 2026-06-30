@@ -13,7 +13,7 @@ import {
     ExpandableChatBody,
     ExpandableChatFooter,
 } from "@/components/ui/expandable-chat";
-import { Bot } from 'lucide-react'
+import { Bot, Lock } from 'lucide-react'
 
 interface Message extends ChatResponse {
     id: string
@@ -21,7 +21,7 @@ interface Message extends ChatResponse {
     timestamp: Date
 }
 
-export function AIChat() {
+export function AIChat({ isPaid }: { isPaid: boolean }) {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -78,6 +78,7 @@ export function AIChat() {
 
     // Load history on mount
     useEffect(() => {
+        if (!isPaid) return
         const loadHistory = async () => {
             try {
                 const history = await getChatHistory()
@@ -111,7 +112,7 @@ export function AIChat() {
             }
         }
         loadHistory()
-    }, [])
+    }, [isPaid])
 
     const handleSend = async (text: string = input) => {
         if (!text.trim()) return
@@ -188,6 +189,15 @@ export function AIChat() {
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Your personal gear & trip assistant</p>
             </ExpandableChatHeader>
 
+            {!isPaid ? (
+                <ExpandableChatBody className="flex flex-col items-center justify-center gap-3 px-6 py-12 bg-transparent text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                        <Lock className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-medium text-neutral-800 dark:text-neutral-100">PackBot is a paid feature</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs">Upgrade your plan to get trail suggestions, trip planning, and gear advice from PackBot.</p>
+                </ExpandableChatBody>
+            ) : (
             <ExpandableChatBody className="px-6 py-0 space-y-6 bg-transparent scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800 hover:scrollbar-thumb-neutral-300 dark:hover:scrollbar-thumb-neutral-700">
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
@@ -287,7 +297,9 @@ export function AIChat() {
                 )}
                 <div ref={messagesEndRef} className="h-2" />
             </ExpandableChatBody>
+            )}
 
+            {isPaid && (
             <ExpandableChatFooter className="p-4 bg-transparent border-none">
                 <div className="relative flex items-center w-full transition-all duration-200 focus-within:ring-2 focus-within:ring-neutral-900/10 dark:focus-within:ring-white/10 rounded-full shadow-sm">
                     <input
@@ -312,6 +324,7 @@ export function AIChat() {
                     <p className="text-[10px] text-neutral-400">AI can make mistakes. Check important info.</p>
                 </div>
             </ExpandableChatFooter>
+            )}
         </ExpandableChat>
     )
 }
