@@ -32,7 +32,7 @@ export function SocialDashboardView({ friends, requests, sentRequests, userId }:
                 </div>
 
                 <div className="relative z-10">
-                    <h1 className="text-4xl font-black font-heading tracking-tight drop-shadow-sm mb-2">Hello</h1>
+                    <h1 className="text-4xl font-black font-heading tracking-tight drop-shadow-sm mb-2">Social Hub</h1>
                     <p className="text-neutral-200 text-lg font-medium drop-shadow-sm max-w-xl">
                         Connect with other hikers, share gear lists, and coordinate group trips.
                     </p>
