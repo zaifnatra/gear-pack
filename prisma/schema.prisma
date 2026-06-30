@@ -357,3 +357,15 @@ model Notification {
 
   @@index([userId])
 }
+
+// ==========================================
+// 6. PUBLIC WAITLIST
+// ==========================================
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
