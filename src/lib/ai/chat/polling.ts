@@ -1,4 +1,4 @@
-// src/app/actions/ai-chat/polling.ts
+// src/lib/ai/chat/polling.ts
 
 import { submitToolOutputs } from '@/lib/backboard'
 import {

@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
+import { updateProfile as updateProfileService } from '@/lib/services/users'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 
@@ -29,23 +29,14 @@ export async function updateProfile(data: ProfileFormValues) {
         return { error: 'Invalid data', details: result.error.flatten() }
     }
 
-    try {
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                fullName: result.data.fullName || null,
-                bio: result.data.bio || null,
-                avatarUrl: result.data.avatarUrl || null,
-                location: result.data.location || null,
-            },
-        })
+    const updateResult = await updateProfileService(user.id, result.data)
 
-        revalidatePath('/dashboard/profile')
-        return { success: true }
-    } catch (error) {
-        console.error('Failed to update profile:', error)
-        return { error: 'Failed to update profile' }
+    if (!updateResult.success) {
+        return { error: updateResult.error ?? 'Failed to update profile' }
     }
+
+    revalidatePath('/dashboard/profile')
+    return { success: true }
 }
 
 export async function updatePassword(password: string) {

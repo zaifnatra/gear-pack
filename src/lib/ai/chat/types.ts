@@ -1,4 +1,4 @@
-// src/app/actions/ai-chat/types.ts
+// src/lib/ai/chat/types.ts
 
 export interface ChatResponse {
     message: string
