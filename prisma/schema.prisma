@@ -27,6 +27,9 @@ model User {
   bio       String?
   location  String?
 
+  // Plan tier — gates premium features like PackBot. No billing yet; set manually until checkout exists.
+  isPaid    Boolean  @default(false)
+
   // AI Memory
   backboardThreadId String?
   preferences       Json?     // Stores: { profile: { pack_style: { value, confidence, updated_at, evidence? }, ... }, conflicts: [...], question_state: {...} }

@@ -25,6 +25,15 @@ export async function sendAIMessage(userMessage: string): Promise<ChatResponse> 
 
     // 1. Get or create Backboard thread
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+
+    if (!dbUser?.isPaid) {
+        return {
+            role: 'assistant',
+            isJSON: false,
+            message: "PackBot is a paid feature. Upgrade your plan to chat with PackBot about trails, trips, and gear.",
+        }
+    }
+
     let threadId = dbUser?.backboardThreadId ?? null
 
     if (!threadId) {
