@@ -4,7 +4,12 @@
 logged-in GearPack web experience — same features, same visual language, adapted only where iOS
 requires it.
 
-**Status:** Plan approved decisions locked (see below). No code written yet.
+**Status:** Phase 1 (backend API layer) is **implemented** on this branch: services extracted
+from all server actions, `/api/v1/*` routes with bearer-token auth, the account-deletion and
+OAuth-provisioning fixes (§5.4, §5.5), and the UGC moderation minimums (§5.6 — `Report` model,
+report/block/unblock endpoints). Still open from Phase 1: swapping the in-memory rate limiter
+for a shared store (§5.8, needs an Upstash/KV account) and web UI for report/block. Phases 2+
+(the Expo app itself) happen in a separate repo per §6.
 
 ---
 
