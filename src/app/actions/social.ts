@@ -93,18 +93,23 @@ export async function sendFriendRequest(senderId: string, receiverId: string) {
 
 export async function respondToFriendRequest(requestId: string, status: 'ACCEPTED' | 'DECLINED') {
     try {
+        let receiverId: string
+
         if (status === 'DECLINED') {
-            await prisma.friendship.delete({
-                where: { id: requestId }
+            const friendship = await prisma.friendship.findUnique({
+                where: { id: requestId },
+                select: { friendId: true }
             })
+            if (!friendship) return { success: false, error: 'Request not found' }
+            receiverId = friendship.friendId
+            await prisma.friendship.delete({ where: { id: requestId } })
         } else {
             const updated = await prisma.friendship.update({
                 where: { id: requestId },
                 data: { status: 'ACCEPTED' },
-                include: { friend: true, user: true } // friend is receiver (current user), user is sender (requester)
+                include: { friend: true, user: true }
             })
-
-            // Notify the requester (updated.userId) that the receiver (updated.friend.username) accepted
+            receiverId = updated.friendId
             await createNotification(
                 updated.userId,
                 NotificationType.SYSTEM,
@@ -112,6 +117,12 @@ export async function respondToFriendRequest(requestId: string, status: 'ACCEPTE
                 `/dashboard/social/${updated.friendId}/closet`
             )
         }
+
+        // Clear the FRIEND_REQUEST notification that triggered this action
+        await prisma.notification.updateMany({
+            where: { userId: receiverId, type: NotificationType.FRIEND_REQUEST, isRead: false },
+            data: { isRead: true }
+        })
 
         revalidatePath('/dashboard/social')
         return { success: true }

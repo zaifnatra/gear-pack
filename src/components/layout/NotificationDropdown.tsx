@@ -52,9 +52,12 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
         return () => clearInterval(interval)
     }, [userId])
 
-    // Refetch when opening to ensure fresh data
+    // Auto-mark all as read when opened, then fetch fresh data
     useEffect(() => {
-        if (isOpen) fetchData()
+        if (!isOpen) return
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+        setUnreadCount(0)
+        markAllAsRead(userId).then(() => fetchData())
     }, [isOpen])
 
     const handleMarkAllRead = async () => {
@@ -135,7 +138,8 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
                                 {notifications.map((notification) => (
                                     <div
                                         key={notification.id}
-                                        className={`flex gap-4 rounded-lg p-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${!notification.isRead ? 'bg-emerald-50/30 dark:bg-emerald-900/10' : ''}`}
+                                        onClick={() => handleNotificationClick(notification)}
+                                        className={`flex gap-4 rounded-lg p-3 transition-colors cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${!notification.isRead ? 'bg-emerald-50/30 dark:bg-emerald-900/10' : ''}`}
                                     >
                                         <div className="flex-shrink-0 mt-1">
                                             {getIcon(notification.type)}
@@ -154,7 +158,7 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
                                                         <Link
                                                             href={notification.link}
                                                             onClick={(e) => {
-                                                                // Allow default navigation but mark read
+                                                                e.stopPropagation()
                                                                 handleNotificationClick(notification)
                                                             }}
                                                             className="text-xs font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-400"
