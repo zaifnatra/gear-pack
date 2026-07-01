@@ -37,7 +37,7 @@ requires it.
 - Web-only, **not** ported: `/` landing, `/waitlist`, GSAP/framer-motion marketing animations
 
 ### API surface: ~55 server actions across 13 files
-`auth` (4), `gear` (4), `trips` (10), `tripGear` (5), `messages` (11), `social` (7),
+`auth` (4), `gear` (4), `trips` (9), `tripGear` (5), `messages` (11), `social` (7),
 `notifications` (5), `search` (1), `categories` (1), `weather` (1), `user` (1), `waitlist` (2),
 `ai-chat` (send/history/polling). Every one of these needs an HTTP equivalent
 (except waitlist — web-only).
@@ -181,20 +181,43 @@ users, filtering, and published contact info.
 - Terms of service must state zero tolerance for objectionable content.
 
 ### 5.7 AI endpoint specifics
-- `POST /api/v1/ai/chat` wraps the existing `sendAIMessage` service. Backboard runs poll
-  server-side and can take 30–90s: the deploy already runs in Docker (no serverless timeout),
-  but set an explicit route timeout and make the iOS client show a streaming-style "thinking"
-  state with a 120s client timeout.
+- **Production runs on Vercel** (`gear-pack.vercel.app` per README; the Docker setup is
+  local-dev only), so serverless function duration limits apply to `/api/v1/ai/chat`.
+  Two facts bound the problem: the existing web chat already runs this exact code as a
+  server action **under the same Vercel limits**, and `pollRun` caps polling at
+  60 × 500ms ≈ ~30s (plus tool-call round trips). A synchronous endpoint is therefore
+  exactly as viable as today's production behavior — set `export const maxDuration` on the
+  route to match (Fluid Compute allows up to 300s on Hobby, 800s on Pro).
+- **Phase 0 to-do:** confirm the Vercel plan and that Fluid Compute is enabled for this
+  project, and log real-world `sendAIMessage` latencies. If observed runs approach the
+  limit, switch to an async design (POST returns a run ID, client polls
+  `GET /api/v1/ai/runs/:id`) — otherwise keep sync for v1 and hold async as the v1.1
+  upgrade.
+- iOS client: streaming-style "thinking" state with a 120s client timeout and cancellation.
 - For **free users the endpoint returns 403 with a neutral error** — not the current
   "Upgrade your plan…" string. The app never renders PackBot UI for free users
   (`GET /api/v1/me` returns `isPaid`), so no upsell language can leak (guideline 3.1.1).
 - Web keeps its current copy; the message moves into the web action wrapper.
 
 ### 5.8 Hardening (new public surface)
-- Rate limiting on `/api/v1/*` (in-memory or Upstash; strictest on `ai/chat`, `auth/sync`,
-  `users/search`).
+- Rate limiting on `/api/v1/*` backed by a **shared store** (Upstash Redis via
+  `@upstash/ratelimit`, or Vercel KV) — in-memory counters are per-instance no-ops on
+  Vercel's serverless runtime. Strictest limits on `ai/chat`, `auth/sync`, `users/search`.
 - Never echo internal errors; log server-side, return generic messages.
 - CORS: not needed for the native app (no browser origin), keep it locked down.
+
+### 5.9 API backward-compatibility policy (once v1.0 ships)
+Unlike the web app, shipped iOS builds lag the backend — App Review takes days and users
+defer updates for weeks. From the first App Store release onward:
+- `/api/v1` request/response shapes are **additive-only**: new optional fields and new
+  endpoints are fine; removing/renaming fields, changing types, or adding required params
+  requires a new endpoint (or `/api/v2`). Old shapes stay live until usage drops.
+- The app sends an `X-App-Version` header on every request. The server can respond
+  `426 Upgrade Required` for versions below a configurable minimum, and the app renders a
+  blocking "please update" screen — the escape hatch for security issues or unavoidable
+  breaking changes.
+- Web is unaffected (server actions deploy atomically with their callers); this policy
+  governs only `/api/v1/*`.
 
 **Exit criteria:** every endpoint has an integration test hitting the route handler with a real
 JWT (extend the existing Vitest server project); `npm run test:server` green; web app
@@ -353,7 +376,8 @@ topics; where Report/Block live; confirmation that no purchases exist in the app
 | Apple rejects for account deletion | High without fix | Phase 1.5 admin-delete fix |
 | Apple rejects for UGC (no report/block) | High without fix | Phase 1.6 moderation minimums |
 | Apple rejects for upsell language | Medium | 403-neutral API + string audit; PackBot fully hidden for free users |
-| Backboard latency (30–90s) feels broken on mobile | Medium | Persistent "thinking" UI, 120s timeout, request cancellation; consider async run-id polling in v1.1 if complaints |
+| Backboard latency (~30s polling cap + tool calls) feels broken on mobile, or hits Vercel duration limits | Medium | Confirm Vercel plan/Fluid Compute in Phase 0; `maxDuration` on the route (same envelope as today's web chat); persistent "thinking" UI, 120s client timeout, cancellation; async run-id polling as fallback/v1.1 |
+| Old app builds break against an updated API | Medium | Additive-only `/api/v1` policy + `X-App-Version` header with `426 Upgrade Required` kill switch (§5.9) |
 | Sign in with Apple's private-relay emails break username/email logic | Medium | `syncAuthUser` handles missing name/relay emails; test explicitly |
 | Public API abuse (new attack surface) | Medium | Rate limiting, zod validation everywhere, generic errors |
 | Expo/RN dependency churn mid-project | Low | Pin SDK at kickoff; no upgrades until post-launch |
