@@ -12,6 +12,7 @@ export async function cleanDatabase() {
       "Participant",
       "Trip",
       "Friendship",
+      "Waitlist",
       "GearItem",
       "Category",
       "User"

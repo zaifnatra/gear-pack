@@ -61,6 +61,7 @@ export function NotificationDropdown({ userId }: NotificationDropdownProps) {
     }, [isOpen])
 
     const handleMarkAllRead = async () => {
+        console.log("Hi there")
         // Optimistic
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
         setUnreadCount(0)
