@@ -4,12 +4,12 @@ import { prisma } from '@/lib/prisma'
 import { FriendshipStatus, NotificationType } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from './notifications'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function searchUsers(query: string, currentUserId: string) {
     if (query.length < 2) return { success: true, data: [] }
 
     try {
-        // Find users matching query who are NOT the current user
         const users = await prisma.user.findMany({
             where: {
                 AND: [
@@ -20,7 +20,15 @@ export async function searchUsers(query: string, currentUserId: string) {
                             { email: { contains: query, mode: 'insensitive' } }
                         ]
                     },
-                    { id: { not: currentUserId } }
+                    { id: { not: currentUserId } },
+                    {
+                        NOT: {
+                            OR: [
+                                { sentRequests: { some: { friendId: currentUserId } } },
+                                { receivedRequests: { some: { userId: currentUserId } } },
+                            ]
+                        }
+                    }
                 ]
             },
             take: 10,
@@ -32,25 +40,7 @@ export async function searchUsers(query: string, currentUserId: string) {
             }
         })
 
-        // Filter out existing friends or pending requests
-        // This could be optimized with a raw query or more complex where clause, 
-        // but for now we'll filter in memory for simplicity with small data sets
-        const friendships = await prisma.friendship.findMany({
-            where: {
-                OR: [
-                    { userId: currentUserId },
-                    { friendId: currentUserId }
-                ]
-            }
-        })
-
-        const connectedUserIds = new Set(
-            friendships.map(f => f.userId === currentUserId ? f.friendId : f.userId)
-        )
-
-        const filterdUsers = users.filter(u => !connectedUserIds.has(u.id))
-
-        return { success: true, data: filterdUsers }
+        return { success: true, data: users }
     } catch (error) {
         console.error('Search users error:', error)
         return { success: false, error: 'Failed to search users' }
@@ -59,6 +49,11 @@ export async function searchUsers(query: string, currentUserId: string) {
 
 export async function sendFriendRequest(senderId: string, receiverId: string) {
     try {
+        const { allowed } = checkRateLimit(`friend:${senderId}`, 20, 60 * 60 * 1000)
+        if (!allowed) {
+            return { success: false, error: 'You have sent too many friend requests recently. Please wait before sending more.' }
+        }
+
         // Check if exists
         const existing = await prisma.friendship.findFirst({
             where: {
@@ -98,18 +93,23 @@ export async function sendFriendRequest(senderId: string, receiverId: string) {
 
 export async function respondToFriendRequest(requestId: string, status: 'ACCEPTED' | 'DECLINED') {
     try {
+        let receiverId: string
+
         if (status === 'DECLINED') {
-            await prisma.friendship.delete({
-                where: { id: requestId }
+            const friendship = await prisma.friendship.findUnique({
+                where: { id: requestId },
+                select: { friendId: true }
             })
+            if (!friendship) return { success: false, error: 'Request not found' }
+            receiverId = friendship.friendId
+            await prisma.friendship.delete({ where: { id: requestId } })
         } else {
             const updated = await prisma.friendship.update({
                 where: { id: requestId },
                 data: { status: 'ACCEPTED' },
-                include: { friend: true, user: true } // friend is receiver (current user), user is sender (requester)
+                include: { friend: true, user: true }
             })
-
-            // Notify the requester (updated.userId) that the receiver (updated.friend.username) accepted
+            receiverId = updated.friendId
             await createNotification(
                 updated.userId,
                 NotificationType.SYSTEM,
@@ -117,6 +117,12 @@ export async function respondToFriendRequest(requestId: string, status: 'ACCEPTE
                 `/dashboard/social/${updated.friendId}/closet`
             )
         }
+
+        // Clear the FRIEND_REQUEST notification that triggered this action
+        await prisma.notification.updateMany({
+            where: { userId: receiverId, type: NotificationType.FRIEND_REQUEST, isRead: false },
+            data: { isRead: true }
+        })
 
         revalidatePath('/dashboard/social')
         return { success: true }

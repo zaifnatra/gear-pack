@@ -3,16 +3,22 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { AIChat } from "@/components/ai/AIChat"
+import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode
 }>) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const dbUser = user ? await prisma.user.findUnique({ where: { id: user.id }, select: { isPaid: true } }) : null
+
     return (
         <>
             <Suspense fallback={null}>
-                <AIChat />
+                <AIChat isPaid={!!dbUser?.isPaid} />
             </Suspense>
             <div className="relative flex min-h-screen flex-col bg-neutral-50/50 dark:bg-neutral-950 md:flex-row overflow-hidden font-sans">
                 {/* Background Auroras (Fixed) */}

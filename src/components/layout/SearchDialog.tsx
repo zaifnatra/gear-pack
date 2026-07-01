@@ -20,8 +20,10 @@ export function SearchDialog({ isOpen, onClose, currentUserId }: SearchDialogPro
     const router = useRouter()
 
     useEffect(() => {
-        if (isOpen && inputRef.current) {
-            inputRef.current.focus()
+        if (isOpen) {
+            setQuery('')
+            setResults([])
+            inputRef.current?.focus()
         }
     }, [isOpen])
 

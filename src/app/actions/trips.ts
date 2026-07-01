@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { TripType, Difficulty, TripVisibility, ParticipantRole, NotificationType } from '@prisma/client'
 import { createNotification } from './notifications'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function createTrip(userId: string, data: {
     name: string
@@ -19,6 +20,11 @@ export async function createTrip(userId: string, data: {
     visibility?: TripVisibility
 }) {
     try {
+        const { allowed } = checkRateLimit(`trip:${userId}`, 10, 60 * 60 * 1000)
+        if (!allowed) {
+            return { success: false, error: 'You have created too many trips recently. Please wait before creating another.' }
+        }
+
         const trip = await prisma.trip.create({
             data: {
                 organizer: { connect: { id: userId } },

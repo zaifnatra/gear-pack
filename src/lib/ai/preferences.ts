@@ -165,12 +165,12 @@ export function normalizePreferenceStore(raw: unknown, timestamp = nowIso()): { 
     if (Array.isArray(raw.conflicts)) {
         store.conflicts = raw.conflicts
             .filter(isPlainObject)
-            .map((c: any) => ({
+            .map((c: Record<string, unknown>) => ({
                 key: c.key as PreferenceKey,
-                old_value: c.old_value,
-                new_value: c.new_value,
+                old_value: c.old_value as string,
+                new_value: c.new_value as string,
                 evidence: typeof c.evidence === "string" ? c.evidence : undefined,
-                timestamp: c.timestamp,
+                timestamp: c.timestamp as string,
             } as PreferenceConflict))
             .filter((c): c is PreferenceConflict => {
                 return (

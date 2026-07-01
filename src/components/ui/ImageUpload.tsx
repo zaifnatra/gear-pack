@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 interface ImageUploadProps {
     onUploadComplete: (url: string) => void
@@ -21,6 +21,7 @@ export function ImageUpload({ onUploadComplete }: ImageUploadProps) {
 
         setIsUploading(true)
         try {
+            const supabase = createClient()
             const fileExt = file.name.split('.').pop()
             const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
             const filePath = `${fileName}`
