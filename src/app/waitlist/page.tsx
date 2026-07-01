@@ -3,11 +3,19 @@ import Image from 'next/image'
 import { Compass, Mountain, ShieldCheck, Users } from 'lucide-react'
 import { getWaitlistCount } from '@/app/actions/waitlist'
 import { WaitlistSignup } from '@/components/waitlist/WaitlistSignup'
+import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function WaitlistPage() {
-    const count = await getWaitlistCount()
+    const supabase = await createClient()
+    const [{ data: { user } }, count] = await Promise.all([
+        supabase.auth.getUser(),
+        getWaitlistCount(),
+    ])
+    const headerLink = user
+        ? { href: '/dashboard', label: 'Home' }
+        : { href: '/login', label: 'Sign in' }
 
     return (
         <main className="relative min-h-screen overflow-hidden bg-neutral-950 text-white">
@@ -28,10 +36,10 @@ export default async function WaitlistPage() {
                         <Image src="/logo-dark.svg" alt="GearPack" width={139} height={36} className="h-9 w-auto" />
                     </Link>
                     <Link
-                        href="/login"
+                        href={headerLink.href}
                         className="rounded-lg border border-white/25 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-neutral-950"
                     >
-                        Sign in
+                        {headerLink.label}
                     </Link>
                 </header>
 
