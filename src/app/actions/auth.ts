@@ -8,7 +8,6 @@ import { prisma } from '@/lib/prisma'
 import { createDefaultPreferenceStore } from '@/lib/ai/preferences'
 
 const appOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN!.replace(/\/$/, '')
-// test
 
 export async function signIn(formData: FormData) {
     const login = formData.get('login') as string // Can be email or username
