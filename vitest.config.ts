@@ -11,6 +11,7 @@ export default defineConfig({
           environment: 'node',
           include: [
             'src/app/actions/__tests__/**/*.test.ts',
+            'src/app/api/__tests__/**/*.test.ts',
             'src/lib/ai/__tests__/**/*.test.ts',
           ],
           setupFiles: ['src/test/setup-server.ts'],

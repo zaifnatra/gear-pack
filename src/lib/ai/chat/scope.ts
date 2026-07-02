@@ -1,4 +1,4 @@
-// src/app/actions/ai-chat/scope.ts
+// src/lib/ai/chat/scope.ts
 
 import type { ChatResponse } from './types'
 
